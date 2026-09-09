@@ -1,0 +1,58 @@
+# --- Sistema operativo ---
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.DS_Store
+$RECYCLE.BIN/
+
+# --- Archivos temporales de Office ---
+~$*.docx
+~$*.xlsx
+~$*.pptx
+*.tmp
+
+# --- Credenciales y configuración local (NUNCA subir) ---
+.env
+.env.*
+*.local
+config.local.*
+credenciales.*
+**/conexion_local.*
+
+# --- Máquinas virtuales (archivos enormes, no versionar) ---
+*.vdi
+*.vmdk
+*.vbox
+*.vbox-prev
+*.ova
+*.iso
+
+# --- Volcados y respaldos de base de datos ---
+*.dmp
+*.bak
+dump.sql
+backup_*.sql
+
+# --- Node / aplicación web ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+dist/
+build/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# --- Editores e IDE ---
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Logs ---
+*.log
+logs/
