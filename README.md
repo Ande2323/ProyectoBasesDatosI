@@ -4,7 +4,7 @@ Sistema de gestión de inventario, consignaciones e intercambios para una tienda
 
 **Universidad El Bosque** · Programa de Ingeniería de Sistemas
 **Asignatura:** Bases de Datos 1 · **Docente:** Ing., Esp., M.Ed. Christian Felipe Duarte
-**Periodo:** 2026
+**Periodo:** 2026-2
 
 ## Integrantes
 
