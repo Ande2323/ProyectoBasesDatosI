@@ -6,7 +6,7 @@
 
 Se requiere un sistema de información que modele el inventario de una tienda especializada en cartas coleccionables de *Magic: The Gathering* — catálogo de cartas, ediciones, impresiones y ejemplares físicos — y que permita al personal conocer en todo momento qué tiene la tienda, en qué condición está cada copia, cuánto vale y si está disponible o apartada.
 
-El dominio a cubrir incluye el catálogo de cartas con sus colores, tipos, ediciones, rarezas, artistas e idiomas; el inventario identificado ejemplar por ejemplar, con su condición física y su ubicación en el local; el historial de precios de referencia del mercado para efectos de valoración; un esquema de usuarios con tres perfiles que diferencia el acceso administrativo, el operativo y el de consulta; y un módulo de reservas mediante el cual un cliente registrado aparta ejemplares desde su perfil en la página, con un plazo máximo de treinta días para reclamarlos.
+El dominio a cubrir incluye el catálogo de cartas con sus colores, tipos, ediciones, rarezas, artistas e idiomas; el inventario identificado ejemplar por ejemplar, con su condición física y su ubicación en el local; el historial de precios de referencia del mercado para efectos de valoración; un esquema de usuarios con tres perfiles que diferencia el acceso administrativo, el operativo y el de consulta; un módulo de reservas mediante el cual un cliente registrado aparta ejemplares desde su perfil en la página, con un plazo máximo de treinta días para reclamarlos; y el registro de las salidas de inventario, que deja constancia de cuándo y a qué cliente se entregó cada ejemplar, tanto si venía de una reserva como si se trató de una entrega directa en mostrador.
 
 Se solicita construir el modelo entidad-relación extendido (MERE) que represente fielmente la operación interna de la tienda según los supuestos definidos en este documento, y que permita, a partir de los datos base, calcular precios sugeridos, disponibilidad real y vencimiento de reservas mediante consultas y agregaciones.
 
@@ -14,7 +14,7 @@ Se solicita construir el modelo entidad-relación extendido (MERE) que represent
 
 # A. Supuestos generales del negocio
 
-- El sistema es de uso interno de una única tienda física y su alcance se limita a la gestión del inventario y a las reservas que los clientes realizan desde la página.
+- El sistema es de uso interno de una única tienda física y su alcance se limita a la gestión del inventario, a las reservas que los clientes realizan desde la página y al registro de las salidas de mercancía.
 - **El sistema no maneja dinero en movimiento.** No se modelan ventas, compras, consignaciones, intercambios, pagos, facturación, cuentas por cobrar ni cuentas por pagar. Los precios que el sistema almacena son valores de referencia del mercado, no transacciones.
 - Toda entidad del sistema tiene identificador único y, cuando corresponde, atributos básicos de auditoría (fecha de ingreso o de registro, estado activo/inactivo).
 - Las bajas son lógicas: empleados desvinculados, clientes inactivos y reservas vencidas se marcan con su estado correspondiente pero se conservan para preservar coherencia histórica.
@@ -41,7 +41,8 @@ Se solicita construir el modelo entidad-relación extendido (MERE) que represent
 # D. Ejemplares y condición física
 
 - Un EJEMPLAR es la copia física individual que la tienda tiene en su poder, identificada por el código de etiqueta que la tienda imprime y adhiere a la funda al momento del ingreso. Si la tienda posee tres copias de la misma impresión, existen tres ejemplares distintos.
-- Cada ejemplar registra su estado (disponible, reservado o entregado), su ubicación física dentro del local, su fecha de ingreso al inventario y observaciones sobre daños puntuales.
+- Cada ejemplar registra su estado, su ubicación física dentro del local, su fecha de ingreso al inventario y observaciones sobre daños puntuales.
+- El estado de un ejemplar es disponible, reservado, entregado o dado de baja. Los ejemplares dañados, perdidos o extraviados se marcan como dados de baja y no generan salida, porque no se entregan a nadie.
 - El ingreso al inventario se registra únicamente mediante el atributo fecha_ingreso del ejemplar. No se modela la procedencia de la mercancía ni la entidad que la suministró.
 - La condición de conservación se modela como entidad CONDICION con los valores estándar del mercado (Near Mint, Lightly Played, Moderately Played, Heavily Played y Damaged) y un factor de ajuste sobre el precio. Se modela como entidad y no como atributo porque el factor depende de la condición y no del ejemplar, lo que constituiría una dependencia transitiva.
 - Un ejemplar en estado reservado no puede ser apartado por otro cliente mientras la reserva siga vigente.
@@ -70,42 +71,49 @@ Se solicita construir el modelo entidad-relación extendido (MERE) que represent
 - El acceso al sistema se realiza mediante una CUENTA_USUARIO identificada por su nombre de usuario, con contraseña cifrada, fecha de último acceso y estado.
 - Los roles se manejan en un catálogo ROL con tres valores:
 - **Cliente**: consulta el catálogo y la disponibilidad, y crea y cancela sus propias reservas desde su perfil. No ve información interna del inventario ni datos de otros clientes.
-- **Empleado**: consulta el inventario completo, registra el ingreso de ejemplares, actualiza la condición y la ubicación, carga precios de referencia y marca reservas como reclamadas o vencidas.
+- **Empleado**: consulta el inventario completo, registra el ingreso de ejemplares, actualiza la condición y la ubicación, carga precios de referencia, registra las salidas y marca reservas como reclamadas o vencidas.
 - **Administrador**: además de todo lo del empleado, administra los catálogos del sistema, crea y da de baja usuarios, asigna roles, registra empleados y define la relación de supervisión entre ellos.
 - Una cuenta pertenece a un cliente o a un empleado, nunca a ambos: las relaciones con CLIENTE y con EMPLEADO son ambas 1:1 y de participación parcial del lado de la cuenta, y la regla que exige exactamente una de las dos es una restricción de negocio que no se representa en el diagrama.
-- Toda operación sobre el inventario y toda atención de una reserva quedan atribuidas al usuario que las registró, lo que permite auditar la responsabilidad sobre cada acción.
 - No se modelan permisos granulares por recurso, registros de acceso, sesiones activas, recuperación de contraseña ni analítica de uso por usuario.
 
 # H. Reservas de ejemplares
 
 - Una RESERVA es el apartado que un cliente realiza desde su perfil sobre uno o varios ejemplares disponibles. Se identifica por un consecutivo y registra la fecha en que se creó y su estado.
 - La fecha de vencimiento es un atributo derivado: corresponde a la fecha de la reserva más treinta días, que es el plazo máximo que la política de la tienda concede para reclamar los ejemplares apartados.
-- El estado de una reserva es vigente, reclamada, vencida o cancelada. Al reclamarse, los ejemplares pasan a estado entregado; al vencerse o cancelarse, regresan a disponible y quedan liberados para otros clientes.
+- El estado de una reserva es vigente, reclamada, vencida o cancelada. Al vencerse o cancelarse, los ejemplares regresan a disponible y quedan liberados para otros clientes.
 - La liberación por vencimiento es automática: una vez superado el plazo, la reserva deja de tener efecto sobre el inventario sin necesidad de intervención del personal.
-- La relación APARTA entre RESERVA y EJEMPLAR es N:M: una reserva puede cubrir varios ejemplares, y un mismo ejemplar puede haber sido apartado en distintas reservas a lo largo del tiempo, siempre que las anteriores hayan vencido o sido canceladas.
+- La relación APARTA entre RESERVA y EJEMPLAR es N:M: una reserva puede cubrir varios ejemplares, y un mismo ejemplar puede haber sido apartado en distintas reservas, siempre que las anteriores hayan vencido o sido canceladas.
 - Un ejemplar puede pertenecer a una sola reserva vigente a la vez. Es una restricción de negocio que no se representa en el diagrama.
-- El empleado que atiende la entrega queda registrado en la reserva. Su participación es parcial, porque una reserva vencida o cancelada nunca fue atendida.
-- El sistema no registra ninguna transacción al momento de reclamar los ejemplares: la entrega y su eventual pago ocurren fuera del alcance del sistema.
 - No se modelan listas de espera, notificaciones al cliente, prórrogas del plazo, penalizaciones por incumplimiento ni límites en la cantidad de ejemplares que un cliente puede apartar.
 
-# I. Estadísticas y métricas derivadas
+# I. Salidas del inventario
+
+- Una SALIDA registra el momento en que uno o varios ejemplares dejan el inventario al ser entregados a un cliente. Se identifica por un consecutivo y registra la fecha, el motivo y observaciones.
+- El motivo de la salida es entrega directa en mostrador o reclamo de una reserva. Las bajas por daño o pérdida no generan salida: se resuelven con el estado del ejemplar, porque no hay entrega a nadie.
+- Toda salida tiene un cliente identificado. La relación RECIBE entre CLIENTE y SALIDA es de participación total del lado de la salida: no se permiten entregas anónimas, de modo que la tienda siempre sabe a quién entregó cada ejemplar.
+- Toda salida queda atribuida al empleado que la registró mediante la relación REGISTRA, lo que permite auditar la responsabilidad sobre cada entrega.
+- La relación RETIRA entre SALIDA y EJEMPLAR es 1:N: una misma salida puede llevarse varios ejemplares, pero un ejemplar abandona el inventario una sola vez.
+- La relación ORIGINA entre RESERVA y SALIDA es 1:1 y de participación parcial en ambos extremos: una salida en mostrador no proviene de ninguna reserva, y una reserva vencida o cancelada nunca generó salida.
+- El sistema no registra ninguna transacción económica en la salida: la entrega deja constancia del movimiento de inventario, mientras que el pago ocurre fuera del alcance del sistema.
+- No se modelan devoluciones posteriores a la entrega, garantías, comprobantes impresos ni despachos a domicilio.
+
+# J. Estadísticas y métricas derivadas
 
 - El valor total del inventario, la disponibilidad real por impresión y el vencimiento de las reservas son datos derivados, calculados a partir de los registros base. No se almacenan duplicados en otras tablas.
-- La trazabilidad de un ejemplar —cuándo ingresó, en qué reservas estuvo apartado y cuál fue su destino— se obtiene mediante consultas sobre las relaciones CORRESPONDE_A y APARTA, y no como entidad materializada.
-- Las métricas analíticas (rotación por edición, evolución del precio de una impresión, ejemplares apartados frente a disponibles, reservas vencidas por cliente, actividad por usuario) se resuelven por consulta sobre el modelo base y no requieren entidades adicionales.
+- Las métricas analíticas (rotación por edición, evolución del precio de una impresión, ejemplares apartados frente a disponibles, reservas vencidas por cliente, salidas registradas por empleado) se resuelven por consulta sobre el modelo base y no requieren entidades adicionales.
 - No se modelan recálculos programados, marcas de fecha de último cálculo, tableros de indicadores ni auditoría de correcciones posteriores.
 
-# J. Resumen estructural del modelo
+# K. Resumen estructural del modelo
 
 Resultado del modelo conceptual final:
 
-- Entidades regulares (14): CARTA, COLOR, TIPO, EDICION, RAREZA, ARTISTA, IDIOMA, CONDICION, EJEMPLAR, CLIENTE, EMPLEADO, ROL, CUENTA_USUARIO, RESERVA.
+- Entidades regulares (15): CARTA, COLOR, TIPO, EDICION, RAREZA, ARTISTA, IDIOMA, CONDICION, EJEMPLAR, CLIENTE, EMPLEADO, ROL, CUENTA_USUARIO, RESERVA, SALIDA.
 - Entidades débiles (2): IMPRESION (depende de EDICION y de IDIOMA), PRECIO_REFERENCIA (depende de IMPRESION).
-- Total de entidades del MERE: 16.
+- Total de entidades del MERE: 17.
 - Jerarquías ISA: ninguna. Las personas se modelan como entidades independientes CLIENTE y EMPLEADO, sin supertipo común.
 - Relaciones identificadoras (3): CONTIENE e IMPRESA_EN (hacia IMPRESION) y SE_COTIZA (hacia PRECIO_REFERENCIA).
-- Total de relaciones: 17, distribuidas en 2 de tipo 1:1, 11 de tipo 1:N y 4 de tipo N:M.
-- Relaciones 1:1 (2): ACCEDE_CON entre CLIENTE y CUENTA_USUARIO, y ACCEDE_CON entre EMPLEADO y CUENTA_USUARIO.
+- Total de relaciones: 20, distribuidas en 3 de tipo 1:1, 13 de tipo 1:N y 4 de tipo N:M.
+- Relaciones 1:1 (3): ACCEDE_CON entre CLIENTE y CUENTA_USUARIO, ACCEDE_CON entre EMPLEADO y CUENTA_USUARIO, y ORIGINA entre RESERVA y SALIDA.
 - Relaciones N:M (4): POSEE (CARTA–COLOR), ES_DE_TIPO (CARTA–TIPO), SUPERVISA (recursiva sobre EMPLEADO) y APARTA (RESERVA–EJEMPLAR).
 - Relaciones recursivas (1): SUPERVISA sobre EMPLEADO, con roles supervisor y supervisado.
 - Relaciones con atributos propios (1): SUPERVISA (fecha_inicio, fecha_fin).
