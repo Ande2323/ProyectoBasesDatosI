@@ -56,3 +56,8 @@ env/
 # --- Logs ---
 *.log
 logs/
+
+# --- Prototipo de frontend (taller local, NUNCA versionar) ---
+# Carpeta de trabajo para maquetar y probar la interfaz antes de llevarla a app/.
+# Se ignora la carpeta COMPLETA: ningún archivo de su interior debe subirse al repositorio.
+prototipo/

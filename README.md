@@ -8,11 +8,11 @@ Sistema de gestión de inventario, consignaciones e intercambios para una tienda
 
 ## Integrantes
 
-| Nombre | Documento | Rol en el proyecto |
-|---|---|---|
-| _(por completar)_ | | |
-| _(por completar)_ | | |
-| _(por completar)_ | | |
+| Nombre | Documento |
+|---|---|
+| _(por completar)_ | |
+| _(por completar)_ | |
+| _(por completar)_ | |
 
 ## El problema
 
@@ -28,84 +28,48 @@ La unidad real del negocio no es "una carta", sino **un ejemplar físico concret
 
 De esa mezcla nacen la redundancia, las anomalías de actualización y la pérdida de identidad del ejemplar: la tienda no puede distinguir cuál de sus tres copias de una misma carta es propia, cuál es de un consignante y cuál está comprometida en un intercambio.
 
-## Estructura del repositorio
-
-```
-.
-├── docs/
-│   ├── CONTEXTO_PROYECTO.md        Resumen de los requisitos de la asignatura
-│   ├── enunciado/                  Documento original del proyecto
-│   ├── gestion/                    Entregables transversales de gestión
-│   ├── fase1/                      Diseño y modelado
-│   └── fase2/                      Documentos de implementación
-├── modelos/
-│   ├── conceptual/                 E-R Peter-Chen y E-R Extendido
-│   └── logico/                     E-R y modelo relacional en Crow's Foot
-├── scripts/
-│   ├── ddl/                        Creación de objetos
-│   ├── dml/                        Inserción de registros
-│   └── consultas/                  Consultas y scripts varios
-└── app/                            Aplicación web de demostración
-```
-
-## Estado de los entregables
+## Entregables
 
 ### Fase 1 — Diseño y modelado
 
-| Entregable | Estado | Ubicación |
-|---|---|---|
-| Documento de la propuesta | Completado | [docs/fase1/PROPUESTA_PROYECTO.md](docs/fase1/PROPUESTA_PROYECTO.md) |
-| Documento de supuestos | Pendiente | — |
-| Modelo E-R Peter-Chen | Pendiente | `modelos/conceptual/` |
-| Modelo E-R Extendido | Pendiente | `modelos/conceptual/` |
-| Modelo E-R Crow's Foot | Pendiente | `modelos/logico/` |
-| Modelo Relacional Crow's Foot | Pendiente | `modelos/logico/` |
-| Diccionario de datos | Borrador | [docs/fase1/DICCIONARIO_DATOS.md](docs/fase1/DICCIONARIO_DATOS.md) |
-| Álgebra relacional (50 sentencias) | Pendiente | — |
+- [ ] Documento de la propuesta del proyecto
+- [ ] Documento de supuestos
+- [ ] Modelo Entidad-Relación con notación Peter-Chen
+- [ ] Modelo Entidad-Relación Extendido
+- [ ] Modelo Entidad-Relación con notación Crow's Foot
+- [ ] Modelo Relacional con notación Crow's Foot
+- [ ] Diccionario de datos
+- [ ] Documento de álgebra relacional (mínimo 50 sentencias)
 
 ### Fase 2 — Implementación
 
-| Entregable | Estado |
-|---|---|
-| Análisis de selección de Sistema Operativo | Pendiente |
-| Implementación de la máquina virtual | Pendiente |
-| Análisis de selección de RDBMS | Pendiente |
-| Implementación del RDBMS | Pendiente |
-| Scripts de creación, inserción y varios | Pendiente |
-| Aplicación web conectada | Pendiente |
-| Video de demostración | Pendiente |
+- [ ] Análisis de selección de Sistema Operativo
+- [ ] Documento de implementación de la máquina virtual
+- [ ] Análisis de selección de RDBMS
+- [ ] Documento de implementación del RDBMS
+- [ ] Scripts de creación de objetos
+- [ ] Scripts de inserción de registros
+- [ ] Scripts varios y README
+- [ ] Conexión de la aplicación web a la base de datos
+- [ ] Video de demostración (máximo 15 minutos)
 
 ### Transversales
 
-| Entregable | Estado | Ubicación |
-|---|---|---|
-| Acta de constitución | Completado | [docs/gestion/GESTION_PROYECTO.md](docs/gestion/GESTION_PROYECTO.md) |
-| Identificación de interesados | Completado | ídem |
-| EDT/WBS | Completado | ídem |
-| Cronograma | Completado | ídem |
-| Presupuesto | Completado | ídem |
-| Acta de cierre | Plantilla lista | ídem |
+- [ ] Acta de constitución del proyecto
+- [ ] Identificación de interesados
+- [ ] EDT / WBS
+- [ ] Cronograma
+- [ ] Presupuesto
+- [ ] Acta de cierre
 
-## Modelo de datos
-
-24 entidades distribuidas en cuatro módulos, más 2 tablas derivadas de las relaciones muchos a muchos:
-
-- **Catálogo:** `Carta`, `Color`, `Tipo`, `Edicion`, `Impresion`, `Rareza`, `Artista`, `Idioma`
-- **Inventario:** `Ejemplar`, `Condicion`, `PrecioReferencia`
-- **Personas:** `Cliente`, `Empleado`, `Rol`, `CuentaUsuario`, `Proveedor`
-- **Operaciones:** `Compra`/`DetalleCompra`, `Venta`/`DetalleVenta`, `ContratoConsignacion`, `Liquidacion`, `Intercambio`/`DetalleIntercambio`
-- **Relaciones N:M:** `CartaColor`, `CartaTipo`
-
-El modelo privilegia claves naturales; solo `Artista` y `PrecioReferencia` usan clave artificial. La especificación completa está en el [diccionario de datos](docs/fase1/DICCIONARIO_DATOS.md), y hay un [recorrido de ejemplo](docs/fase1/EJEMPLO_REGISTRO.md) que sigue una carta desde el catálogo hasta su venta.
-
-## Restricciones técnicas de la asignatura
+## Restricciones técnicas
 
 - Sistema operativo: **solo distribuciones Linux o Unix**
 - RDBMS: **cualquiera excepto SQL Server**
 - Modelo E-R: **mínimo 8 entidades** con relaciones 1:1, 1:N y N:M
 - Normalización hasta **3FN**
 - Mínimo **50 sentencias de álgebra relacional**
-- Video de demostración de **máximo 15 minutos**, con todos los integrantes en cámara y audio
+- Video de **máximo 15 minutos**, con todos los integrantes en cámara y audio
 
 ## Convenciones de trabajo
 
