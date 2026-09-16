@@ -1,24 +1,25 @@
 # Proyecto BD I
 
-## Sistema de Gestión de Inventario, Consignaciones e Intercambios de Cartas Coleccionables
+## Sistema Interno de Inventario y Reservas de Cartas Coleccionables
 
 # Enunciado del problema
 
-Se requiere un sistema de información que modele la operación de una tienda especializada en cartas coleccionables de *Magic: The Gathering* — catálogo de cartas, ediciones, impresiones, ejemplares físicos, clientes, empleados y operaciones comerciales — y que permita derivar información de negocio a partir de ese modelo: trazabilidad completa de cada ejemplar, valoración por condición física, márgenes por venta, saldos pendientes con consignantes, rotación por edición y auditoría de las operaciones por empleado.
+Se requiere un sistema de información que modele el inventario de una tienda especializada en cartas coleccionables de *Magic: The Gathering* — catálogo de cartas, ediciones, impresiones y ejemplares físicos — y que permita al personal conocer en todo momento qué tiene la tienda, en qué condición está cada copia, cuánto vale y si está disponible o apartada.
 
-El dominio a cubrir incluye el catálogo de cartas con sus colores, tipos, ediciones, rarezas, artistas e idiomas; el inventario identificado ejemplar por ejemplar, con su condición física, su propietario y su ubicación; el historial de precios de referencia del mercado; el abastecimiento mediante compras a proveedores; la venta de ejemplares a clientes; la recepción de cartas en consignación bajo contrato con su posterior liquidación de comisiones; la intermediación de intercambios entre coleccionistas avalados por la tienda; y un esquema de empleados con roles y credenciales para diferenciar el acceso administrativo del operativo.
+El dominio a cubrir incluye el catálogo de cartas con sus colores, tipos, ediciones, rarezas, artistas e idiomas; el inventario identificado ejemplar por ejemplar, con su condición física y su ubicación en el local; el historial de precios de referencia del mercado para efectos de valoración; un esquema de usuarios con tres perfiles que diferencia el acceso administrativo, el operativo y el de consulta; y un módulo de reservas mediante el cual un cliente registrado aparta ejemplares desde su perfil en la página, con un plazo máximo de treinta días para reclamarlos.
 
-Se solicita construir el modelo entidad-relación extendido (MERE) que represente fielmente la operación de la tienda según los supuestos definidos en este documento, y que permita, a partir de los datos base, calcular precios sugeridos, liquidaciones, márgenes y métricas mediante consultas y agregaciones.
+Se solicita construir el modelo entidad-relación extendido (MERE) que represente fielmente la operación interna de la tienda según los supuestos definidos en este documento, y que permita, a partir de los datos base, calcular precios sugeridos, disponibilidad real y vencimiento de reservas mediante consultas y agregaciones.
 
 # Supuestos del modelo (reglas y delimitaciones del caso)
 
 # A. Supuestos generales del negocio
 
-- El sistema cubre la operación de una única tienda física, delimitada a las líneas de negocio de venta de inventario propio, consignación e intermediación de intercambios.
+- El sistema es de uso interno de una única tienda física y su alcance se limita a la gestión del inventario y a las reservas que los clientes realizan desde la página.
+- **El sistema no maneja dinero en movimiento.** No se modelan ventas, compras, consignaciones, intercambios, pagos, facturación, cuentas por cobrar ni cuentas por pagar. Los precios que el sistema almacena son valores de referencia del mercado, no transacciones.
 - Toda entidad del sistema tiene identificador único y, cuando corresponde, atributos básicos de auditoría (fecha de ingreso o de registro, estado activo/inactivo).
-- Las bajas son lógicas: empleados desvinculados, clientes inactivos y contratos vencidos se marcan con su estado correspondiente pero se conservan para preservar coherencia histórica de las operaciones en que participaron.
-- No se modelan múltiples monedas, sucursales, canales de venta en línea ni integraciones en tiempo real con servicios externos de cotización; se asume una única fuente operativa y los precios de referencia se cargan manualmente.
-- La unidad real del negocio no es la carta como concepto, sino el ejemplar físico concreto: cada copia de cartón que la tienda tiene en su poder es un registro independiente.
+- Las bajas son lógicas: empleados desvinculados, clientes inactivos y reservas vencidas se marcan con su estado correspondiente pero se conservan para preservar coherencia histórica.
+- No se modelan múltiples sucursales, monedas, canales de venta en línea ni integraciones en tiempo real con servicios externos de cotización; se asume una única fuente operativa y los precios de referencia se cargan manualmente.
+- La unidad real del inventario no es la carta como concepto, sino el ejemplar físico concreto: cada copia de cartón que la tienda tiene en su poder es un registro independiente.
 
 # B. Catálogo de cartas
 
@@ -40,11 +41,11 @@ Se solicita construir el modelo entidad-relación extendido (MERE) que represent
 # D. Ejemplares y condición física
 
 - Un EJEMPLAR es la copia física individual que la tienda tiene en su poder, identificada por el código de etiqueta que la tienda imprime y adhiere a la funda al momento del ingreso. Si la tienda posee tres copias de la misma impresión, existen tres ejemplares distintos.
-- Cada ejemplar registra su estado (disponible, reservado, vendido, intercambiado o devuelto), su ubicación física, su fecha de ingreso y observaciones sobre daños puntuales.
+- Cada ejemplar registra su estado (disponible, reservado o entregado), su ubicación física dentro del local, su fecha de ingreso al inventario y observaciones sobre daños puntuales.
+- El ingreso al inventario se registra únicamente mediante el atributo fecha_ingreso del ejemplar. No se modela la procedencia de la mercancía ni la entidad que la suministró.
 - La condición de conservación se modela como entidad CONDICION con los valores estándar del mercado (Near Mint, Lightly Played, Moderately Played, Heavily Played y Damaged) y un factor de ajuste sobre el precio. Se modela como entidad y no como atributo porque el factor depende de la condición y no del ejemplar, lo que constituiría una dependencia transitiva.
-- La propiedad del ejemplar se determina por su participación en la relación AMPARA con un contrato de consignación: el ejemplar que no participa en ella es propiedad de la tienda.
-- Un ejemplar comprometido —vendido, entregado en un intercambio o devuelto a su consignante— no puede volver a transarse.
-- No se modelan reservas con abono parcial, ejemplares dañados en tránsito, graduaciones de terceros ni certificados de autenticidad.
+- Un ejemplar en estado reservado no puede ser apartado por otro cliente mientras la reserva siga vigente.
+- No se modelan traslados entre ubicaciones, inventarios físicos periódicos, mermas, graduaciones de terceros ni certificados de autenticidad.
 
 # E. Valoración y precios de referencia
 
@@ -52,84 +53,62 @@ Se solicita construir el modelo entidad-relación extendido (MERE) que represent
 - El historial se conserva completo: los precios no se sobrescriben, de modo que sea posible analizar la evolución del valor de una impresión en el tiempo.
 - El precio sugerido de un ejemplar es un atributo derivado, obtenido al multiplicar el precio de referencia vigente de su impresión por el factor de ajuste de su condición física.
 - El sistema admite varias cotizaciones para una misma impresión en una misma fecha, provenientes de fuentes distintas.
-- Los valores pactados en cada operación se almacenan en la relación correspondiente y no se recalculan: una venta registrada conserva el precio al que efectivamente se transó, con independencia de cómo evolucione el mercado después.
-- No se modelan reglas de descuento por volumen, listas de precios diferenciadas por cliente ni predicciones de valorización.
+- Estos valores son informativos: permiten al cliente saber cuánto vale la carta que aparta y a la tienda conocer el valor de su inventario, pero el sistema no registra ninguna transacción sobre ellos.
+- No se modelan reglas de descuento, listas de precios diferenciadas por cliente ni predicciones de valorización.
 
 # F. Personas: clientes y empleados
 
-- Un CLIENTE es toda persona externa que compra, consigna o participa en intercambios. Un mismo cliente puede desempeñar los tres papeles.
-- Un EMPLEADO es quien opera el sistema y registra los movimientos, con su cargo, fecha de vinculación y estado.
+- Un CLIENTE es toda persona externa que se registra en la página para consultar el catálogo y apartar ejemplares desde su perfil.
+- Un EMPLEADO es quien opera el sistema dentro de la tienda, con su cargo, fecha de vinculación y estado.
 - Tanto CLIENTE como EMPLEADO tienen como identificador el atributo compuesto documento, descomponible en tipo de documento y número de documento, y un atributo compuesto nombre_completo, descomponible en nombres y apellidos. Ambos se descomponen durante la normalización a 3FN.
 - La supervisión entre empleados se modela como relación recursiva SUPERVISA sobre EMPLEADO, con los roles supervisor y supervisado y atributos de fecha de inicio y fecha de fin. Es N:M porque un empleado puede haber sido supervisado por distintas personas en periodos distintos, y la fecha de fin nula indica que la supervisión sigue vigente.
 - La participación en SUPERVISA es parcial en ambos extremos: el administrador no tiene supervisor y no todo empleado supervisa a alguien.
 - No se modelan jerarquías de personas mediante especialización, ni datos de nómina, contratos laborales, horarios o comisiones por desempeño.
 
-# G. Usuarios y roles
+# G. Usuarios, roles y permisos
 
-- Un empleado accede al sistema mediante una CUENTA_USUARIO identificada por su nombre de usuario, con contraseña cifrada, fecha de último acceso y estado.
-- La relación entre EMPLEADO y CUENTA_USUARIO es 1:1 y su participación es parcial del lado del empleado, porque no todo empleado requiere acceso al sistema.
-- Los roles se manejan en un catálogo ROL con nombre, descripción y nivel de permiso. Cada empleado tiene un único rol asignado.
-- Toda venta, compra, consignación, liquidación e intercambio queda atribuida al empleado que la registró, lo que permite auditar la responsabilidad sobre cada operación.
-- No se modelan permisos granulares por recurso, registros de acceso, sesiones activas ni analítica de uso por usuario.
+- El acceso al sistema se realiza mediante una CUENTA_USUARIO identificada por su nombre de usuario, con contraseña cifrada, fecha de último acceso y estado.
+- Los roles se manejan en un catálogo ROL con tres valores:
+- **Cliente**: consulta el catálogo y la disponibilidad, y crea y cancela sus propias reservas desde su perfil. No ve información interna del inventario ni datos de otros clientes.
+- **Empleado**: consulta el inventario completo, registra el ingreso de ejemplares, actualiza la condición y la ubicación, carga precios de referencia y marca reservas como reclamadas o vencidas.
+- **Administrador**: además de todo lo del empleado, administra los catálogos del sistema, crea y da de baja usuarios, asigna roles, registra empleados y define la relación de supervisión entre ellos.
+- Una cuenta pertenece a un cliente o a un empleado, nunca a ambos: las relaciones con CLIENTE y con EMPLEADO son ambas 1:1 y de participación parcial del lado de la cuenta, y la regla que exige exactamente una de las dos es una restricción de negocio que no se representa en el diagrama.
+- Toda operación sobre el inventario y toda atención de una reserva quedan atribuidas al usuario que las registró, lo que permite auditar la responsabilidad sobre cada acción.
+- No se modelan permisos granulares por recurso, registros de acceso, sesiones activas, recuperación de contraseña ni analítica de uso por usuario.
 
-# H. Proveedores y compras
+# H. Reservas de ejemplares
 
-- Un PROVEEDOR es el distribuidor o mayorista al que la tienda adquiere su inventario propio, identificado por su NIT.
-- Una COMPRA es la adquisición de ejemplares a un proveedor. Su identificación depende parcialmente del proveedor, porque dos distribuidores distintos pueden emitir su factura con el mismo número: es una entidad débil de PROVEEDOR cuya clave parcial es el número de factura.
-- El total de la compra es un atributo derivado, obtenido de la suma de los costos unitarios de los ejemplares adquiridos.
-- La relación ADQUIERE entre COMPRA y EJEMPLAR tiene como atributo propio el costo unitario, que es el valor histórico contra el cual se calcula el margen de la venta posterior.
-- La participación del ejemplar en ADQUIERE es parcial, porque las cartas recibidas en consignación nunca fueron compradas.
-- No se modelan órdenes de compra, cuentas por pagar, plazos de crédito con el proveedor ni devoluciones al distribuidor.
+- Una RESERVA es el apartado que un cliente realiza desde su perfil sobre uno o varios ejemplares disponibles. Se identifica por un consecutivo y registra la fecha en que se creó y su estado.
+- La fecha de vencimiento es un atributo derivado: corresponde a la fecha de la reserva más treinta días, que es el plazo máximo que la política de la tienda concede para reclamar los ejemplares apartados.
+- El estado de una reserva es vigente, reclamada, vencida o cancelada. Al reclamarse, los ejemplares pasan a estado entregado; al vencerse o cancelarse, regresan a disponible y quedan liberados para otros clientes.
+- La liberación por vencimiento es automática: una vez superado el plazo, la reserva deja de tener efecto sobre el inventario sin necesidad de intervención del personal.
+- La relación APARTA entre RESERVA y EJEMPLAR es N:M: una reserva puede cubrir varios ejemplares, y un mismo ejemplar puede haber sido apartado en distintas reservas a lo largo del tiempo, siempre que las anteriores hayan vencido o sido canceladas.
+- Un ejemplar puede pertenecer a una sola reserva vigente a la vez. Es una restricción de negocio que no se representa en el diagrama.
+- El empleado que atiende la entrega queda registrado en la reserva. Su participación es parcial, porque una reserva vencida o cancelada nunca fue atendida.
+- El sistema no registra ninguna transacción al momento de reclamar los ejemplares: la entrega y su eventual pago ocurren fuera del alcance del sistema.
+- No se modelan listas de espera, notificaciones al cliente, prórrogas del plazo, penalizaciones por incumplimiento ni límites en la cantidad de ejemplares que un cliente puede apartar.
 
-# I. Ventas
+# I. Estadísticas y métricas derivadas
 
-- Una VENTA registra la entrega de uno o varios ejemplares a un cliente, con su consecutivo interno, fecha, medio de pago y estado (pagada o anulada).
-- El total de la venta es un atributo derivado, obtenido de la suma de los precios de venta menos los descuentos aplicados.
-- La relación INCLUYE entre VENTA y EJEMPLAR tiene como atributos propios el precio de venta y el descuento, que congelan el valor de la transacción en el momento en que ocurrió.
-- La participación del ejemplar en INCLUYE es parcial, porque un ejemplar disponible aún no ha sido vendido.
-- Un ejemplar se vende una sola vez: al estar excluida la compra directa de cartas a clientes, una copia que sale del inventario no regresa a él.
-- No se modelan pasarelas de pago, facturación electrónica, pagos parciales, devoluciones del cliente ni logística de envíos.
-
-# J. Consignaciones y liquidaciones
-
-- Un CONTRATO_CONSIGNACION es el acuerdo por el cual un cliente deja cartas para que la tienda las venda a cambio de una comisión. Registra su consecutivo, fecha de inicio, fecha límite, porcentaje de comisión y estado (vigente, liquidado o vencido).
-- El contrato es una entidad y no un atributo del ejemplar porque agrupa muchos ejemplares bajo unas mismas condiciones: si el porcentaje de comisión viviera en cada ejemplar, se repetiría en cada carta del mismo acuerdo.
-- La relación AMPARA entre CONTRATO_CONSIGNACION y EJEMPLAR es la que determina la propiedad de la carta durante su permanencia en la tienda.
-- Una LIQUIDACION es el comprobante del pago que la tienda hace al consignante por las cartas suyas que se vendieron, con su monto bruto, su comisión retenida y su estado.
-- La relación entre CONTRATO_CONSIGNACION y LIQUIDACION es 1:N, porque un contrato puede liquidarse por partes a medida que se venden sus ejemplares.
-- El monto neto a pagar es un atributo derivado, obtenido de restar la comisión al monto bruto.
-- Al vencer el plazo del contrato, los ejemplares no vendidos se devuelven a su propietario y quedan en estado devuelto.
-- No se modelan penalizaciones por retiro anticipado, renovaciones automáticas del contrato ni comisiones diferenciadas por tipo de carta.
-
-# K. Intercambios entre clientes
-
-- Un INTERCAMBIO representa el trade entre dos clientes, avalado y valorado por la tienda, con su consecutivo, fecha, comisión cobrada y estado (cerrado o anulado).
-- Cada una de las dos partes del intercambio se modela mediante una relación independiente entre CLIENTE e INTERCAMBIO, diferenciadas por el rol que desempeña el cliente: lado A y lado B. Ambas son necesarias porque un trade tiene exactamente dos partes que deben poder distinguirse.
-- La relación INVOLUCRA entre INTERCAMBIO y EJEMPLAR es N:M y tiene como atributos propios el lado que aporta la carta y el valor tasado que se le asigna en ese trade concreto.
-- Los valores totales de cada lado son atributos derivados, obtenidos de la suma de los valores tasados de los ejemplares que aporta cada parte. Permiten verificar si el intercambio fue equilibrado, que es el servicio que la tienda avala.
-- En un intercambio las cartas cambian de propietario pero no hay pago entre los clientes: lo único que se cobra es la comisión de la tienda, que es atributo del intercambio.
-- No se modelan contraofertas, negociaciones previas, historial de reputación de los participantes ni intercambios entre más de dos partes.
-
-# L. Estadísticas y métricas derivadas
-
-- El valor del inventario, los márgenes por venta y los saldos pendientes con cada consignante son datos derivados, calculados a partir de los registros de las operaciones. No se almacenan duplicados en otras tablas.
-- La trazabilidad completa de un ejemplar —cómo ingresó, quién lo poseyó y cómo salió— se obtiene mediante consultas sobre las relaciones ADQUIERE, AMPARA, INCLUYE e INVOLUCRA, y no como entidad materializada.
-- Las métricas analíticas (rotación por edición, evolución del precio de una impresión, comparación entre el inventario propio y el consignado, operaciones registradas por empleado, rentabilidad por proveedor) se resuelven por consulta sobre el modelo base y no requieren entidades adicionales.
+- El valor total del inventario, la disponibilidad real por impresión y el vencimiento de las reservas son datos derivados, calculados a partir de los registros base. No se almacenan duplicados en otras tablas.
+- La trazabilidad de un ejemplar —cuándo ingresó, en qué reservas estuvo apartado y cuál fue su destino— se obtiene mediante consultas sobre las relaciones CORRESPONDE_A y APARTA, y no como entidad materializada.
+- Las métricas analíticas (rotación por edición, evolución del precio de una impresión, ejemplares apartados frente a disponibles, reservas vencidas por cliente, actividad por usuario) se resuelven por consulta sobre el modelo base y no requieren entidades adicionales.
 - No se modelan recálculos programados, marcas de fecha de último cálculo, tableros de indicadores ni auditoría de correcciones posteriores.
 
-# M. Resumen estructural del modelo
+# J. Resumen estructural del modelo
 
 Resultado del modelo conceptual final:
 
-- Entidades regulares (18): CARTA, COLOR, TIPO, EDICION, RAREZA, ARTISTA, IDIOMA, CONDICION, EJEMPLAR, CLIENTE, EMPLEADO, ROL, CUENTA_USUARIO, PROVEEDOR, VENTA, CONTRATO_CONSIGNACION, LIQUIDACION, INTERCAMBIO.
-- Entidades débiles (3): IMPRESION (depende de EDICION y de IDIOMA), PRECIO_REFERENCIA (depende de IMPRESION), COMPRA (depende de PROVEEDOR).
-- Total de entidades del MERE: 21.
+- Entidades regulares (14): CARTA, COLOR, TIPO, EDICION, RAREZA, ARTISTA, IDIOMA, CONDICION, EJEMPLAR, CLIENTE, EMPLEADO, ROL, CUENTA_USUARIO, RESERVA.
+- Entidades débiles (2): IMPRESION (depende de EDICION y de IDIOMA), PRECIO_REFERENCIA (depende de IMPRESION).
+- Total de entidades del MERE: 16.
 - Jerarquías ISA: ninguna. Las personas se modelan como entidades independientes CLIENTE y EMPLEADO, sin supertipo común.
-- Relaciones identificadoras (4): CONTIENE e IMPRESA_EN (hacia IMPRESION), SE_COTIZA (hacia PRECIO_REFERENCIA) y EMITE (hacia COMPRA).
-- Total de relaciones: 28, distribuidas en 1 de tipo 1:1 (ACCEDE_CON), 23 de tipo 1:N y 4 de tipo N:M.
+- Relaciones identificadoras (3): CONTIENE e IMPRESA_EN (hacia IMPRESION) y SE_COTIZA (hacia PRECIO_REFERENCIA).
+- Total de relaciones: 17, distribuidas en 2 de tipo 1:1, 11 de tipo 1:N y 4 de tipo N:M.
+- Relaciones 1:1 (2): ACCEDE_CON entre CLIENTE y CUENTA_USUARIO, y ACCEDE_CON entre EMPLEADO y CUENTA_USUARIO.
+- Relaciones N:M (4): POSEE (CARTA–COLOR), ES_DE_TIPO (CARTA–TIPO), SUPERVISA (recursiva sobre EMPLEADO) y APARTA (RESERVA–EJEMPLAR).
 - Relaciones recursivas (1): SUPERVISA sobre EMPLEADO, con roles supervisor y supervisado.
-- Relaciones con roles diferenciados (2): PARTICIPA_COMO_A y PARTICIPA_COMO_B entre CLIENTE e INTERCAMBIO.
-- Relaciones con atributos propios (4): ADQUIERE (costo_unitario), INCLUYE (precio_venta, descuento), INVOLUCRA (lado, valor_tasado) y SUPERVISA (fecha_inicio, fecha_fin).
-- Atributos derivados: valor_mana (CARTA), precio_sugerido (EJEMPLAR), total (COMPRA y VENTA), monto_neto (LIQUIDACION), valor_lado_a y valor_lado_b (INTERCAMBIO).
+- Relaciones con atributos propios (1): SUPERVISA (fecha_inicio, fecha_fin).
+- Atributos derivados: valor_mana (CARTA), precio_sugerido (EJEMPLAR) y fecha_vencimiento (RESERVA).
 - Atributos compuestos: documento y nombre_completo (CLIENTE y EMPLEADO).
 - Atributos multivaluados: ninguno. Los colores y los tipos, que serían atributos multivaluados de CARTA, se modelan como entidades relacionadas N:M.
