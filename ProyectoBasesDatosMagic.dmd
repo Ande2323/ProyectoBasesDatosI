@@ -1,0 +1,13 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<OSDM_Design class="oracle.dbtools.crest.model.design.Design" name="ProyectoBasesDatosMagic" id="525D0983-52B1-02DB-A982-C8595F17EA7D" version="3.5">
+<createdBy>win</createdBy>
+<createdTime>2026-10-09 04:41:22 UTC</createdTime>
+<ownerDesignName>ProyectoBasesDatosMagic</ownerDesignName>
+<capitalNames>false</capitalNames>
+<designId>525D0983-52B1-02DB-A982-C8595F17EA7D</designId>
+<usedDesignStorageDescriptors>
+<designDescr class="oracle.dbtools.crest.model.design.Design$DesignStorageDesc" id="EDDC4701-869A-B863-F6B1-552C968AD409">
+<designStoragePath>C:\modelo_logico</designStoragePath>
+</designDescr>
+</usedDesignStorageDescriptors>
+</OSDM_Design>
