@@ -6,71 +6,49 @@ JDBC (`PreparedStatement` / `ResultSet`) y el JSON se arma con `JsonUtil`. La ba
 **MySQL 8** y el modelo es el de `Scripts.zip`, `Normalizacion_3FN_Magic_BD.pdf` y el
 diccionario de datos. El frontend (Angular) consume esta API.
 
+**Dónde corre cada cosa:** el backend y el frontend en Windows; MySQL en la máquina
+virtual de AWS (Amazon Linux 2023).
+
 ## Abrirlo en VS Code
 
 1. **Archivo → Abrir carpeta…** y elige esta carpeta `backend/` (no la raíz del repo),
    para que VS Code lea `.vscode/settings.json`.
 2. Necesitas Java 21 y la extensión *Extension Pack for Java*.
-3. Copia **`mysql-connector-j-<versión>.jar`** en `lib/` (ver `lib/LEEME.txt`).
+3. El driver de MySQL ya viene en `lib/`.
 4. Copia `config/configuracion.properties.example` como `config/configuracion.properties`
-   y pon la URL, el usuario y la contraseña de MySQL. Ese archivo no se sube a git.
+   y pon la IP de la máquina y la contraseña de `app_web`. Ese archivo no se sube a git:
+   la contraseña se comparte en privado entre el grupo.
 5. Ejecuta con **F5** (configuración *Backend Magic*).
 
 Prueba rápida: abre `http://localhost:8080/api/salud`. Debe responder
 `{"servidor":"activo","baseDatos":"conectada"}`.
 
-## Preparar la base
+## La base de datos en AWS
 
-En este orden, con un usuario administrador de MySQL:
-
-1. `DDL.sql` y `DML.sql` de `Scripts.zip`: crean la base `magic_cards` y los datos de prueba.
-2. `sql/restricciones.sql` de esta carpeta: agrega los UNIQUE que la normalización dejó
-   pendientes (sección 9). **Es necesario:** sin ellos los códigos de los catálogos y el
-   nombre de la carta podrían repetirse.
-3. `USUARIO_APP.sql` de `Scripts.zip`: crea el usuario `app_web`. Cambien su clave antes.
+Instalada en la máquina: MySQL 8.4, con la base `magic_cards` creada con `DDL.sql` y
+`DML.sql` de `Scripts.zip` más `sql/restricciones.sql`, que agrega los UNIQUE que la
+normalización dejó pendientes (sección 9).
 
 `DML.sql` trae un administrador (`lgomez`), un empleado (`arojas`) y clientes de prueba.
 
-## Subirlo a la máquina de AWS
+**Para conectarse desde Windows,** el grupo de seguridad de la instancia debe permitir el
+puerto **3306** desde la IP de quien lo use (regla *MySQL/Aurora*, origen *My IP*), y el **22**
+para administrarla. Si cambia la IP de tu casa, hay que actualizar la regla. Nunca abras el
+3306 a `0.0.0.0/0`.
 
-En la máquina (ejemplo para Ubuntu), con el repo clonado en `/home/ubuntu/ProyectoBasesDatosI`:
+**La IP pública cambia** cada vez que se apaga y se prende la instancia. Hay que actualizar
+`bd.url`, o asignarle una *Elastic IP* para que quede fija.
 
-```bash
-sudo apt update && sudo apt install -y openjdk-21-jdk-headless mysql-server
-cd ~/ProyectoBasesDatosI/backend
-cp config/configuracion.properties.example config/configuracion.properties
-nano config/configuracion.properties
-chmod 600 config/configuracion.properties
-chmod +x compilar.sh ejecutar.sh
-./compilar.sh
-./ejecutar.sh
-```
-
-El driver debe estar en `lib/` (o copiarse con `scp`). En `configuracion.properties`,
-`cors.origen` debe incluir el origen desde donde se abre Angular, por ejemplo
-`http://localhost:4200,http://IP_PUBLICA:4200`.
-
-Para que arranque solo con la máquina, ajusta usuario y ruta en `magic-backend.service` y:
+**Administrar MySQL:** entra por SSH y usa `sudo mysql`; la clave de root está en
+`/root/.my.cnf`, dentro de la máquina.
 
 ```bash
-sudo cp magic-backend.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now magic-backend
-sudo systemctl status magic-backend
-journalctl -u magic-backend -f
+ssh -i clave-aws.pem ec2-user@IP_DE_LA_MAQUINA
 ```
 
-**En el grupo de seguridad de AWS:**
-
-- Abre el puerto **8080** (API) y el **22** (SSH), este último solo desde tu IP.
-- **No abras el 3306.** MySQL y el backend están en la misma máquina: se hablan por
-  `localhost`. Por eso conviene crear el usuario como `'app_web'@'localhost'` en lugar del
-  `'%'` que trae `USUARIO_APP.sql`.
-- La API va por HTTP sin cifrar, así que contraseñas y tokens viajan en claro. Sirve para
-  la demostración; para uso real iría detrás de HTTPS.
-
-Si cambias el código en VS Code mientras el backend corre por terminal: ambos usan `bin/`.
-Detén uno antes de compilar con el otro.
+El usuario de la aplicación es `app_web`, con permisos solo de `SELECT`, `INSERT`, `UPDATE`
+y `DELETE` sobre `magic_cards`, y exige conexión cifrada. No se usa `USUARIO_APP.sql`
+porque su clave está publicada en el repositorio.
 
 ## Estructura
 

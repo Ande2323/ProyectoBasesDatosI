@@ -29,13 +29,10 @@ public class ReservaDAOImpl implements ReservaDAO {
 			+ "cliente_tipo_documento, cliente_numero_documento) VALUES (?, ?, ?, ?, ?)";
 	private static final String APARTAR = "INSERT INTO ejemplar_reserva (id_ejemplar, consecutivo) VALUES (?, ?)";
 	private static final String MARCAR_RESERVADO = "UPDATE ejemplar SET estado = 'RESERVADO' WHERE id_ejemplar = ?";
-	private static final String LIBERAR_EJEMPLARES = "UPDATE ejemplar SET estado = 'DISPONIBLE' WHERE estado = 'RESERVADO' "
-			+ "AND id_ejemplar IN (SELECT id_ejemplar FROM ejemplar_reserva WHERE consecutivo = ?)";
+	private static final String EJEMPLARES_DE_RESERVA = "SELECT id_ejemplar FROM ejemplar_reserva WHERE consecutivo = ?";
+	private static final String LIBERAR_EJEMPLAR = "UPDATE ejemplar SET estado = 'DISPONIBLE' WHERE id_ejemplar = ? AND estado = 'RESERVADO'";
 	private static final String CAMBIAR_ESTADO = "UPDATE reserva SET estado = ? WHERE consecutivo = ?";
-	private static final String LIBERAR_VENCIDOS = "UPDATE ejemplar SET estado = 'DISPONIBLE' WHERE estado = 'RESERVADO' "
-			+ "AND id_ejemplar IN (SELECT er.id_ejemplar FROM ejemplar_reserva er JOIN reserva r "
-			+ "ON r.consecutivo = er.consecutivo WHERE r.estado = 'ACTIVA' AND r.fecha_vencimiento < ?)";
-	private static final String VENCER = "UPDATE reserva SET estado = 'VENCIDA' WHERE estado = 'ACTIVA' AND fecha_vencimiento < ?";
+	private static final String BUSCAR_VENCIDAS = "SELECT consecutivo FROM reserva WHERE estado = 'ACTIVA' AND fecha_vencimiento < ?";
 	private static final String MOSTRAR = "SELECT " + COLUMNAS + " FROM reserva ORDER BY consecutivo DESC";
 	private static final String MOSTRAR_ESTADO = "SELECT " + COLUMNAS + " FROM reserva WHERE estado = ? ORDER BY consecutivo DESC";
 	private static final String MOSTRAR_CLIENTE = "SELECT " + COLUMNAS + " FROM reserva WHERE cliente_tipo_documento = ? "
@@ -100,25 +97,27 @@ public class ReservaDAOImpl implements ReservaDAO {
 		return cerrarYLiberar(consecutivo, "VENCIDA");
 	}
 
+	/**
+	 * Se llama en casi todas las peticiones. Por eso primero solo lee: lo normal es
+	 * que no haya nada que vencer, y así las peticiones simultáneas no se bloquean
+	 * entre sí. Cada reserva vencida se cierra en su propia transacción.
+	 */
 	@Override
 	public void vencerReservas(LocalDate hoy) {
-		try (Connection conexion = ConexionBD.obtenerConexion()) {
-			conexion.setAutoCommit(false);
-			try {
-				// Primero los ejemplares: la consulta necesita ver las reservas aún ACTIVAS.
-				for (String sql : new String[] { LIBERAR_VENCIDOS, VENCER }) {
-					try (PreparedStatement ps = conexion.prepareStatement(sql)) {
-						ps.setDate(1, Date.valueOf(hoy));
-						ps.executeUpdate();
-					}
+		List<Integer> vencidas = new ArrayList<>();
+		try (Connection conexion = ConexionBD.obtenerConexion();
+				PreparedStatement ps = conexion.prepareStatement(BUSCAR_VENCIDAS)) {
+			ps.setDate(1, Date.valueOf(hoy));
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					vencidas.add(rs.getInt(1));
 				}
-				conexion.commit();
-			} catch (SQLException e) {
-				conexion.rollback();
-				e.printStackTrace();
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+		}
+		for (int consecutivo : vencidas) {
+			cerrarYLiberar(consecutivo, "VENCIDA");
 		}
 	}
 
@@ -153,9 +152,12 @@ public class ReservaDAOImpl implements ReservaDAO {
 						}
 					}
 				}
-				try (PreparedStatement ps = conexion.prepareStatement(LIBERAR_EJEMPLARES)) {
-					ps.setInt(1, consecutivo);
-					ps.executeUpdate();
+				// Por llave primaria y en orden: un UPDATE con subconsulta bloquearía toda la tabla.
+				for (int idEjemplar : ejemplaresDeReserva(conexion, consecutivo)) {
+					try (PreparedStatement ps = conexion.prepareStatement(LIBERAR_EJEMPLAR)) {
+						ps.setInt(1, idEjemplar);
+						ps.executeUpdate();
+					}
 				}
 				try (PreparedStatement ps = conexion.prepareStatement(CAMBIAR_ESTADO)) {
 					ps.setString(1, nuevoEstado);
@@ -172,6 +174,19 @@ public class ReservaDAOImpl implements ReservaDAO {
 			e.printStackTrace();
 		}
 		return false;
+	}
+
+	private TreeSet<Integer> ejemplaresDeReserva(Connection conexion, int consecutivo) throws SQLException {
+		TreeSet<Integer> ejemplares = new TreeSet<>();
+		try (PreparedStatement ps = conexion.prepareStatement(EJEMPLARES_DE_RESERVA)) {
+			ps.setInt(1, consecutivo);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					ejemplares.add(rs.getInt(1));
+				}
+			}
+		}
+		return ejemplares;
 	}
 
 	/** Retorna el estado del ejemplar con la fila bloqueada, o null si no existe. */

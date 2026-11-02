@@ -5,8 +5,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 
 /**
- * La fecha de "hoy" siempre según la tienda en Bogotá. Una máquina de AWS suele
- * estar en UTC: sin esto, desde las 7 p.m. el sistema creería que ya es mañana.
+ * La fecha de "hoy" siempre según la tienda en Bogotá, aunque el equipo donde
+ * corre el backend tenga otra zona horaria.
  */
 public class FechaUtil {
 
