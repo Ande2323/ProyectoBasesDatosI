@@ -1,0 +1,38 @@
+<main class="pagina">
+  <h1 class="titulo-pagina">MI PERFIL</h1>
+  <div class="columnas">
+    <section class="vineta">
+      <h2 class="titulo-seccion">MIS DATOS</h2>
+      <dl>
+        <dt>Usuario</dt><dd>{{ sesion.actual()?.nombreUsuario }}</dd>
+        <dt>Documento</dt><dd>{{ sesion.actual()?.tipoDocumento }} {{ sesion.actual()?.numeroDocumento }}</dd>
+        <dt>Rol</dt><dd>{{ rol() }}</dd>
+      </dl>
+      @if (sesion.esCliente()) {
+        @if (errorDatos()) {
+          <p class="aviso aviso--error" role="alert">{{ errorDatos() }}</p>
+        }
+        @if (exitoDatos()) {
+          <p class="aviso aviso--ok" role="status">{{ exitoDatos() }}</p>
+        }
+        <form (ngSubmit)="guardarDatos()">
+          <label class="campo">Nombres <input name="nombres" [(ngModel)]="nombres" required /></label>
+          <label class="campo">Apellidos <input name="apellidos" [(ngModel)]="apellidos" required /></label>
+          <button class="boton boton--azul" type="submit">GUARDAR</button>
+        </form>
+      }
+    </section>
+    <section class="vineta">
+      <h2 class="titulo-seccion">CAMBIAR CONTRASEÑA</h2>
+      <p>Al cambiarla tendrás que volver a iniciar sesión.</p>
+      @if (errorClave()) {
+        <p class="aviso aviso--error" role="alert">{{ errorClave() }}</p>
+      }
+      <form (ngSubmit)="cambiarClave()">
+        <label class="campo">Contraseña actual <input name="actual" type="password" [(ngModel)]="actual" autocomplete="current-password" required /></label>
+        <label class="campo">Contraseña nueva (mínimo 8) <input name="nueva" type="password" [(ngModel)]="nueva" autocomplete="new-password" required /></label>
+        <button class="boton" type="submit">CAMBIAR</button>
+      </form>
+    </section>
+  </div>
+</main>

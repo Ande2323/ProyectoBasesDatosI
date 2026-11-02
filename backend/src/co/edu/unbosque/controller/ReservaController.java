@@ -9,6 +9,7 @@ import co.edu.unbosque.dao.EjemplarDAO;
 import co.edu.unbosque.dao.ReservaDAO;
 import co.edu.unbosque.dao.impl.EjemplarDAOImpl;
 import co.edu.unbosque.dao.impl.ReservaDAOImpl;
+import co.edu.unbosque.dto.ApartadoDTO;
 import co.edu.unbosque.dto.ReservaDTO;
 import co.edu.unbosque.mapper.ReservaMapper;
 import co.edu.unbosque.model.Ejemplar;
@@ -79,19 +80,6 @@ public class ReservaController {
 		return reservaDAO.cancelarReserva(consecutivo) ? null : "No se pudo cancelar la reserva";
 	}
 
-	/** El personal marca una reserva como vencida. Retorna null si se hizo, o el motivo. */
-	public String marcarVencida(int consecutivo) {
-		reservaDAO.vencerReservas(FechaUtil.hoy());
-		Reserva reserva = reservaDAO.buscarReserva(consecutivo);
-		if (reserva == null) {
-			return "No existe la reserva " + consecutivo;
-		}
-		if (!ACTIVA.equals(reserva.getEstado())) {
-			return "Solo se puede vencer una reserva ACTIVA; esta está " + reserva.getEstado();
-		}
-		return reservaDAO.marcarVencida(consecutivo) ? null : "No se pudo marcar la reserva como vencida";
-	}
-
 	/** El cliente solo ve las suyas; el personal ve todas y puede filtrar por estado. */
 	public List<ReservaDTO> mostrarReservas(SesionActiva sesion, String estado) {
 		reservaDAO.vencerReservas(FechaUtil.hoy());
@@ -109,6 +97,10 @@ public class ReservaController {
 			return null;
 		}
 		return ReservaMapper.toDTO(reserva);
+	}
+
+	public List<ApartadoDTO> mostrarApartados(int consecutivo) {
+		return reservaDAO.mostrarApartados(consecutivo);
 	}
 
 	private boolean esDe(Reserva reserva, SesionActiva cliente) {

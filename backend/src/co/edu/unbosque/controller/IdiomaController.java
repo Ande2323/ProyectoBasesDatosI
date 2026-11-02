@@ -35,10 +35,6 @@ public class IdiomaController {
 		return idiomaDAO.actualizarIdioma(IdiomaMapper.toEntity(dto), idIdioma);
 	}
 
-	public boolean eliminarIdioma(int idIdioma) {
-		return idiomaDAO.eliminarIdioma(idIdioma);
-	}
-
 	public List<IdiomaDTO> mostrarIdiomas() {
 		return idiomaDAO.mostrarIdiomas().stream().map(IdiomaMapper::toDTO).toList();
 	}

@@ -35,10 +35,6 @@ public class ColorController {
 		return colorDAO.actualizarColor(ColorMapper.toEntity(dto), idColor);
 	}
 
-	public boolean eliminarColor(int idColor) {
-		return colorDAO.eliminarColor(idColor);
-	}
-
 	public List<ColorDTO> mostrarColores() {
 		return colorDAO.mostrarColores().stream().map(ColorMapper::toDTO).toList();
 	}

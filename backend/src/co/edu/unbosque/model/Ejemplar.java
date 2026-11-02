@@ -6,8 +6,8 @@ import java.time.LocalDate;
 
 /**
  * Tabla EJEMPLAR (3FN): la copia física. estado: DISPONIBLE, RESERVADO, VENDIDO o
- * BAJA. precioSugerido se calcula una sola vez al ingresar y después no cambia
- * (sección 7.1 de la normalización).
+ * BAJA. precioSugerido sigue al precio vigente y al factor de la condición mientras
+ * la copia esté en la tienda; al quedar VENDIDO o BAJA conserva el último.
  */
 public class Ejemplar implements Serializable {
 

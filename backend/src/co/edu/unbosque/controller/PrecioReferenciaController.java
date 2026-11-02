@@ -1,11 +1,12 @@
 package co.edu.unbosque.controller;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
+import co.edu.unbosque.dao.EjemplarDAO;
 import co.edu.unbosque.dao.ImpresionDAO;
 import co.edu.unbosque.dao.PrecioReferenciaDAO;
+import co.edu.unbosque.dao.impl.EjemplarDAOImpl;
 import co.edu.unbosque.dao.impl.ImpresionDAOImpl;
 import co.edu.unbosque.dao.impl.PrecioReferenciaDAOImpl;
 import co.edu.unbosque.dto.PrecioReferenciaDTO;
@@ -19,21 +20,28 @@ public class PrecioReferenciaController {
 
 	private PrecioReferenciaDAO precioReferenciaDAO;
 	private ImpresionDAO impresionDAO;
+	private EjemplarDAO ejemplarDAO;
 
 	public PrecioReferenciaController() {
 		precioReferenciaDAO = new PrecioReferenciaDAOImpl();
 		impresionDAO = new ImpresionDAOImpl();
+		ejemplarDAO = new EjemplarDAOImpl();
 	}
 
-	/** Si no se indica la fecha, se toma la de hoy. Retorna el precio guardado, o null si no se pudo. */
+	/**
+	 * El precio de una impresión cambia máximo una vez al día: la fecha siempre es la de
+	 * hoy, y nadie la elige. Las copias de la impresión toman el precio nuevo.
+	 * Retorna el precio guardado, o null si no se pudo.
+	 */
 	public PrecioReferenciaDTO registrarPrecio(PrecioReferenciaDTO original) {
 		if (validarPrecio(original) != null) {
 			return null;
 		}
-		PrecioReferenciaDTO dto = conFecha(original);
+		PrecioReferenciaDTO dto = conFechaDeHoy(original);
 		if (!precioReferenciaDAO.registrarPrecio(PrecioReferenciaMapper.toEntity(dto))) {
 			return null;
 		}
+		ejemplarDAO.recalcularPreciosDeImpresion(dto.idCarta(), dto.numeroImpresion());
 		return dto;
 	}
 
@@ -52,15 +60,12 @@ public class PrecioReferenciaController {
 		if (original == null) {
 			return "No llegaron los datos del precio";
 		}
-		PrecioReferenciaDTO dto = conFecha(original);
+		PrecioReferenciaDTO dto = conFechaDeHoy(original);
 		if (dto.valor() == null || dto.valor().signum() <= 0 || dto.valor().compareTo(VALOR_MAXIMO) > 0) {
 			return "El valor es obligatorio y debe ser mayor que cero";
 		}
 		if (dto.valor().stripTrailingZeros().scale() > 2) {
 			return "El valor admite máximo 2 decimales";
-		}
-		if (dto.fecha().isAfter(FechaUtil.hoy())) {
-			return "La fecha de la cotización no puede ser futura";
 		}
 		if (dto.fuenteCotizacion() != null && dto.fuenteCotizacion().length() > 100) {
 			return "La fuente admite máximo 100 caracteres";
@@ -69,14 +74,13 @@ public class PrecioReferenciaController {
 			return "No existe la impresión " + dto.idCarta() + "/" + dto.numeroImpresion();
 		}
 		if (precioReferenciaDAO.buscarPrecio(dto.idCarta(), dto.numeroImpresion(), dto.fecha()) != null) {
-			return "Esa impresión ya tiene precio el " + dto.fecha() + ": solo se admite uno por día";
+			return "El precio de esta impresión ya se cambió hoy: se puede volver a cambiar mañana";
 		}
 		return null;
 	}
 
-	private PrecioReferenciaDTO conFecha(PrecioReferenciaDTO dto) {
-		LocalDate fecha = dto.fecha() == null ? FechaUtil.hoy() : dto.fecha();
-		return new PrecioReferenciaDTO(dto.idCarta(), dto.numeroImpresion(), fecha, dto.valor(), dto.fuenteCotizacion());
+	private PrecioReferenciaDTO conFechaDeHoy(PrecioReferenciaDTO dto) {
+		return new PrecioReferenciaDTO(dto.idCarta(), dto.numeroImpresion(), FechaUtil.hoy(), dto.valor(), dto.fuenteCotizacion());
 	}
 
 }

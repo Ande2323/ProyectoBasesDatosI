@@ -17,8 +17,6 @@ public class ColorDAOImpl implements ColorDAO {
 
 	private static final String INSERTAR = "INSERT INTO color (nombre_color, orden_canonico) VALUES (?, ?)";
 	private static final String ACTUALIZAR = "UPDATE color SET nombre_color = ?, orden_canonico = ? WHERE id_color = ?";
-	private static final String ELIMINAR = "DELETE FROM color WHERE id_color = ? AND NOT EXISTS "
-			+ "(SELECT 1 FROM carta_color WHERE color_id_color = ?)";
 	private static final String MOSTRAR = "SELECT id_color, nombre_color, orden_canonico FROM color ORDER BY orden_canonico";
 	private static final String BUSCAR = "SELECT id_color, nombre_color, orden_canonico FROM color WHERE id_color = ?";
 
@@ -63,21 +61,6 @@ public class ColorDAOImpl implements ColorDAO {
 	}
 
 	/** Solo borra si ninguna carta lo usa. El ON DELETE CASCADE del DDL lo quitaría de las cartas sin avisar. */
-	@Override
-	public boolean eliminarColor(int idColor) {
-		try (Connection conexion = ConexionBD.obtenerConexion();
-				PreparedStatement ps = conexion.prepareStatement(ELIMINAR)) {
-			ps.setInt(1, idColor);
-			ps.setInt(2, idColor);
-			return ps.executeUpdate() == 1;
-		} catch (SQLIntegrityConstraintViolationException e) {
-			return false; // está en uso
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-
 	@Override
 	public List<Color> mostrarColores() {
 		List<Color> lista = new ArrayList<>();

@@ -1,0 +1,47 @@
+<main class="pagina">
+  <div class="cabecera">
+    <h1 class="titulo-pagina">CATÁLOGO</h1>
+    <input
+      class="buscador"
+      type="search"
+      placeholder="Busca una carta..."
+      aria-label="Buscar carta por nombre"
+      [ngModel]="texto()"
+      (ngModelChange)="texto.set($event)"
+    />
+  </div>
+
+  <div class="filtros" role="group" aria-label="Filtrar por color">
+    @for (color of colores(); track color.idColor) {
+      <button
+        class="chip filtro"
+        type="button"
+        [class.filtro--activo]="colorActivo() === color.idColor"
+        [attr.aria-pressed]="colorActivo() === color.idColor"
+        (click)="alternarColor(color.idColor)"
+      >
+        {{ color.nombreColor }}
+      </button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+  }
+  @if (cargando()) {
+    <p class="cargando">¡Abriendo el archivo!...</p>
+  } @else {
+    <div class="rejilla">
+      @for (carta of visibles(); track carta.idCarta) {
+        <a class="celda" [routerLink]="['/carta', carta.idCarta]">
+          <app-carta-visual [carta]="carta" [nombreColor]="nombreColor(carta)" [lineaTipos]="lineaTipos(carta)" [imagen]="imagen(carta)" />
+          <span class="disponibles" [class.disponibles--cero]="disponibles(carta) === 0">
+            {{ disponibles(carta) === 0 ? 'Sin copias libres' : disponibles(carta) + (disponibles(carta) === 1 ? ' copia libre' : ' copias libres') }}
+          </span>
+        </a>
+      } @empty {
+        <p class="aviso">No encontramos cartas con esa búsqueda.</p>
+      }
+    </div>
+  }
+</main>

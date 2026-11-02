@@ -1,0 +1,28 @@
+<main class="escena">
+  <section class="portada vineta vineta--azul">
+    <app-estallido texto="¡BIENVENIDO!" />
+    <h1>EL ARCHIVO</h1>
+    <p>Cartas de Magic: The Gathering, copia por copia. Mira qué hay, cuánto vale y apártala antes de que se la lleve otro.</p>
+  </section>
+
+  <section class="vineta formulario">
+    <h2 class="titulo-seccion">Inicia sesión</h2>
+    @if (error()) {
+      <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+    }
+    <form (ngSubmit)="entrar()">
+      <label class="campo">
+        Usuario
+        <input name="usuario" [(ngModel)]="usuario" autocomplete="username" required />
+      </label>
+      <label class="campo">
+        Contraseña
+        <input name="contrasena" type="password" [(ngModel)]="contrasena" autocomplete="current-password" required />
+      </label>
+      <button class="boton boton--ancho" type="submit" [disabled]="enviando()">
+        {{ enviando() ? 'Entrando...' : '¡ENTRAR!' }}
+      </button>
+    </form>
+    <p class="pie">¿No tienes cuenta? <a routerLink="/registro">Regístrate</a></p>
+  </section>
+</main>

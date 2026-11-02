@@ -1,0 +1,44 @@
+<h1 class="titulo-pagina encabezado-panel">ESTADÍSTICAS</h1>
+
+@if (error()) {
+  <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+}
+@if (cargando()) {
+  <p class="cargando">¡Sacando cuentas!...</p>
+}
+@if (valor(); as v) {
+  <section class="vineta vineta--amarilla total">
+    <span>Valor del inventario ({{ v.ejemplares }} copias disponibles o apartadas)</span>
+    <strong>{{ precio(v.valorTotal) }}</strong>
+  </section>
+}
+
+<div class="rejilla">
+  @for (t of tablas(); track t.titulo) {
+    <section>
+      <h2 class="titulo-seccion">{{ t.titulo }}</h2>
+      <div class="tabla-marco">
+        <table class="tabla">
+          <thead>
+            <tr>
+              @for (c of t.columnas; track c.clave) {
+                <th>{{ c.titulo }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of t.filas; track $index) {
+              <tr>
+                @for (c of t.columnas; track c.clave) {
+                  <td>{{ fila[c.clave] }}</td>
+                }
+              </tr>
+            } @empty {
+              <tr><td [attr.colspan]="t.columnas.length">Sin datos.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</div>

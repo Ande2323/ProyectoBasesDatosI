@@ -1,0 +1,176 @@
+<div class="encabezado-panel">
+  <h1 class="titulo-pagina">INVENTARIO</h1>
+  <button class="boton" type="button" (click)="abrirFormulario()">
+    {{ formularioAbierto() ? 'CERRAR' : '¡REGISTRAR INGRESO!' }}
+  </button>
+</div>
+
+@if (error()) {
+  <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+}
+@if (exito()) {
+  <p class="aviso aviso--ok" role="status">{{ exito() }}</p>
+}
+
+@if (formularioAbierto()) {
+  <section class="vineta formulario">
+    <h2 class="titulo-seccion">NUEVO EJEMPLAR</h2>
+    <form class="ingreso" (ngSubmit)="registrar()">
+      <div class="formulario-rejilla">
+        <label class="campo">Etiqueta <input name="etiqueta" [(ngModel)]="nuevo.codigoEtiqueta" placeholder="MC-0011" required /></label>
+        <label class="campo">
+          Carta
+          <select name="carta" [(ngModel)]="nuevo.idCarta" (ngModelChange)="alCambiarCarta()" required>
+            <option [ngValue]="null">Elige una carta</option>
+            @for (c of cartas(); track c.idCarta) {
+              <option [ngValue]="c.idCarta">{{ c.nombreOficial }}</option>
+            }
+          </select>
+        </label>
+        <label class="campo">
+          Impresión
+          <select name="impresion" [(ngModel)]="nuevo.numeroImpresion" required>
+            <option [ngValue]="null">Elige una impresión</option>
+            @for (i of impresionesDe(nuevo.idCarta); track i.numeroImpresion) {
+              <option [ngValue]="i.numeroImpresion">{{ etiquetaImpresion(i) }}</option>
+            }
+          </select>
+        </label>
+        <label class="campo">
+          Condición
+          <select name="condicion" [(ngModel)]="nuevo.codigoCondicion">
+            @for (c of condiciones(); track c.codigoCondicion) {
+              <option [ngValue]="c.codigoCondicion">{{ c.nombre }}</option>
+            }
+          </select>
+        </label>
+        <label class="campo">Ubicación <input name="ubicacion" [(ngModel)]="nuevo.ubicacion" /></label>
+        <label class="campo">Observaciones de daños <input name="observaciones" [(ngModel)]="nuevo.observacionesDanos" /></label>
+      </div>
+      <div class="imagen-ingreso">
+        <label class="campo">
+          Imagen de la copia (obligatoria: JPG, PNG o WEBP, hasta 5 MB)
+          <input type="file" accept="image/jpeg,image/png,image/webp" (change)="elegirImagen($event)" />
+        </label>
+        @if (vistaPrevia(); as src) {
+          <img class="previa" [src]="src" alt="Vista previa de la imagen" />
+        }
+      </div>
+      <button class="boton boton--azul" type="submit" [disabled]="ocupado() || !vistaPrevia() || !nuevo.codigoEtiqueta || !nuevo.numeroImpresion">
+        {{ ocupado() ? 'GUARDANDO...' : 'GUARDAR' }}
+      </button>
+      @if (!vistaPrevia()) {
+        <span class="nota"> Elige una imagen para poder guardar.</span>
+      }
+    </form>
+  </section>
+}
+
+<div class="resumen">
+    <div class="cifras">
+      <div class="cifra cifra--amarilla"><span>Valor del inventario</span><strong>{{ precio(valorTotal()) }}</strong></div>
+      <div class="cifra cifra--azul"><span>Disponibles</span><strong>{{ cuenta().disponibles }}</strong></div>
+      <div class="cifra cifra--roja"><span>Reservados</span><strong>{{ cuenta().reservados }}</strong></div>
+      <div class="cifra"><span>Vendidos</span><strong>{{ cuenta().vendidos }}</strong></div>
+    </div>
+  <aside class="vineta vineta--amarilla alerta">
+    <h2 class="titulo-seccion">¡POR VENCER!</h2>
+    @for (r of porVencer(); track r.consecutivo) {
+      <p>Reserva {{ r.consecutivo }} · vence {{ fecha(r.fechaVencimiento) }}</p>
+    } @empty {
+      <p>No hay reservas activas.</p>
+    }
+  </aside>
+</div>
+
+<div>
+
+    <div class="herramientas">
+      <input type="search" placeholder="Buscar por etiqueta o carta..." aria-label="Buscar ejemplar" [ngModel]="texto()" (ngModelChange)="texto.set($event)" />
+      <select aria-label="Filtrar por estado" [ngModel]="estado()" (ngModelChange)="estado.set($event)">
+        <option value="">Todos los estados</option>
+        <option value="DISPONIBLE">Disponible</option>
+        <option value="RESERVADO">Reservado</option>
+        <option value="VENDIDO">Vendido</option>
+        <option value="BAJA">De baja</option>
+      </select>
+      <select aria-label="Filtrar por condición" [ngModel]="condicion()" (ngModelChange)="condicion.set($event)">
+        <option value="">Todas las condiciones</option>
+        @for (c of condiciones(); track c.codigoCondicion) {
+          <option [value]="c.codigoCondicion">{{ c.nombre }}</option>
+        }
+      </select>
+    </div>
+
+    @if (cargando()) {
+      <p class="cargando">¡Contando el inventario!...</p>
+    } @else {
+      <div class="tabla-marco">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Imagen</th><th>Etiqueta</th><th>Carta</th><th>Edición</th><th>Condición</th>
+              <th>Ubicación</th><th>Ingreso</th><th class="numero">Precio sugerido</th><th>Estado</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of visibles(); track e.idEjemplar) {
+              <tr>
+                <td>
+                  @if (e.tieneImagen) {
+                    <img class="miniatura" [src]="urlImagen(e)" [alt]="'Imagen de ' + e.codigoEtiqueta" loading="lazy" />
+                  } @else {
+                    <span class="sin-imagen">Sin imagen</span>
+                  }
+                </td>
+                <td class="sin-partir"><strong>{{ e.codigoEtiqueta }}</strong></td>
+                <td>{{ nombreCarta(e.idCarta) }}</td>
+                <td>{{ edicionDe(e) }}</td>
+                <td>{{ e.codigoCondicion }}</td>
+                <td>{{ e.ubicacion }}</td>
+                <td class="sin-partir">{{ fecha(e.fechaIngreso) }}</td>
+                <td class="numero">{{ precio(e.precioSugerido) }}</td>
+                <td><span class="sello" [class]="'sello ' + claseEstado(e.estado)">{{ e.estado }}</span></td>
+                <td>
+                  <div class="acciones">
+                    @if (e.estado === 'DISPONIBLE' || e.estado === 'RESERVADO') {
+                      <button class="boton-chico" type="button" (click)="editar(e)">Editar</button>
+                    }
+                    <span class="selector-archivo boton-chico">
+                      {{ e.tieneImagen ? 'Cambiar imagen' : 'Subir imagen' }}
+                      <input type="file" accept="image/jpeg,image/png,image/webp" [attr.aria-label]="'Imagen de ' + e.codigoEtiqueta" (change)="reemplazarImagen(e, $event)" />
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              @if (editando() === e.idEjemplar) {
+                <tr>
+                  <td colspan="10" class="fila-edicion">
+                    <form class="formulario-rejilla" (ngSubmit)="guardar(e)">
+                      <label class="campo">
+                        Condición
+                        <select name="condicionEdit" [(ngModel)]="edicion.codigoCondicion">
+                          @for (c of condiciones(); track c.codigoCondicion) {
+                            <option [ngValue]="c.codigoCondicion">{{ c.nombre }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label class="campo">Ubicación <input name="ubicacionEdit" [(ngModel)]="edicion.ubicacion" /></label>
+                      <label class="campo">Observaciones <input name="observacionesEdit" [(ngModel)]="edicion.observacionesDanos" /></label>
+                      <div class="acciones botones-edicion">
+                        <button class="boton-chico" type="submit" [disabled]="ocupado()">Guardar</button>
+                        <button class="boton-chico" type="button" (click)="editando.set(null)">Cancelar</button>
+                        <button class="boton-chico boton-chico--peligro" type="button" [disabled]="ocupado() || e.estado !== 'DISPONIBLE'" (click)="darDeBaja(e)">Dar de baja</button>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              }
+            } @empty {
+              <tr><td colspan="10">No hay ejemplares con esos filtros.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+</div>

@@ -19,7 +19,6 @@ import co.edu.unbosque.util.JsonUtil;
  * GET    /api/rarezas/{id}     busca uno
  * POST   /api/rarezas          crea
  * PUT    /api/rarezas/{id}     actualiza
- * DELETE /api/rarezas/{id}     elimina (solo si nadie lo usa)
  */
 public class RarezaHandler extends ManejadorBase {
 
@@ -50,8 +49,6 @@ public class RarezaHandler extends ManejadorBase {
 			crear(intercambio);
 		} else if ("PUT".equals(metodo) && idRareza != null) {
 			actualizar(intercambio, idRareza);
-		} else if ("DELETE".equals(metodo) && idRareza != null) {
-			eliminar(intercambio, idRareza);
 		} else {
 			metodoNoPermitido(intercambio);
 		}
@@ -103,18 +100,6 @@ public class RarezaHandler extends ManejadorBase {
 			return;
 		}
 		enviarMensaje(intercambio, 200, "Registro " + idRareza + " actualizado");
-	}
-
-	private void eliminar(HttpExchange intercambio, Integer idRareza) throws IOException {
-		if (rarezaController.buscarRareza(idRareza) == null) {
-			enviarError(intercambio, 404, "No existe la rareza " + idRareza);
-			return;
-		}
-		if (!rarezaController.eliminarRareza(idRareza)) {
-			enviarError(intercambio, 409, "No se puede eliminar: hay registros que lo usan");
-			return;
-		}
-		enviarMensaje(intercambio, 200, "Registro " + idRareza + " eliminado");
 	}
 
 	/** Convierte el cuerpo en DTO; el id viene de la ruta (0 al crear). */

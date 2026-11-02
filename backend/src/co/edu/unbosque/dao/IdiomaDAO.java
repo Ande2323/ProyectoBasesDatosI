@@ -10,8 +10,6 @@ public interface IdiomaDAO {
 
 	public boolean actualizarIdioma(Idioma idioma, int idIdioma);
 
-	public boolean eliminarIdioma(int idIdioma);
-
 	public List<Idioma> mostrarIdiomas();
 
 	public Idioma buscarIdioma(int idIdioma);

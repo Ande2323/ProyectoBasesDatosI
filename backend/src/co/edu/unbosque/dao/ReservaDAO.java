@@ -3,6 +3,7 @@ package co.edu.unbosque.dao;
 import java.time.LocalDate;
 import java.util.List;
 
+import co.edu.unbosque.dto.ApartadoDTO;
 import co.edu.unbosque.model.Reserva;
 
 public interface ReservaDAO {
@@ -16,9 +17,6 @@ public interface ReservaDAO {
 	/** Pasa una reserva ACTIVA a CANCELADA y libera sus ejemplares. */
 	public boolean cancelarReserva(int consecutivo);
 
-	/** Pasa una reserva ACTIVA a VENCIDA y libera sus ejemplares. */
-	public boolean marcarVencida(int consecutivo);
-
 	/** Vence las reservas ACTIVAS cuyo plazo ya pasó y libera sus ejemplares (sección H). */
 	public void vencerReservas(LocalDate hoy);
 
@@ -28,5 +26,7 @@ public interface ReservaDAO {
 	public List<Reserva> mostrarReservasDeCliente(String tipoDocumento, String numeroDocumento);
 
 	public Reserva buscarReserva(int consecutivo);
+
+	public List<ApartadoDTO> mostrarApartados(int consecutivo);
 
 }

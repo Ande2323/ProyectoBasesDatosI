@@ -16,7 +16,6 @@ public class CondicionDAOImpl implements CondicionDAO {
 
 	private static final String INSERTAR = "INSERT INTO condicion (codigo_condicion, nombre, factor_ajuste) VALUES (?, ?, ?)";
 	private static final String ACTUALIZAR = "UPDATE condicion SET nombre = ?, factor_ajuste = ? WHERE codigo_condicion = ?";
-	private static final String ELIMINAR = "DELETE FROM condicion WHERE codigo_condicion = ?";
 	private static final String MOSTRAR = "SELECT codigo_condicion, nombre, factor_ajuste FROM condicion ORDER BY factor_ajuste DESC";
 	private static final String BUSCAR = "SELECT codigo_condicion, nombre, factor_ajuste FROM condicion WHERE codigo_condicion = ?";
 
@@ -52,20 +51,6 @@ public class CondicionDAOImpl implements CondicionDAO {
 	}
 
 	/** Solo borra si ningún ejemplar la usa: si la usan, MySQL lo impide. */
-	@Override
-	public boolean eliminarCondicion(String codigoCondicion) {
-		try (Connection conexion = ConexionBD.obtenerConexion();
-				PreparedStatement ps = conexion.prepareStatement(ELIMINAR)) {
-			ps.setString(1, codigoCondicion);
-			return ps.executeUpdate() == 1;
-		} catch (SQLIntegrityConstraintViolationException e) {
-			return false; // está en uso
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-
 	@Override
 	public List<Condicion> mostrarCondiciones() {
 		List<Condicion> lista = new ArrayList<>();

@@ -1,0 +1,71 @@
+<h1 class="titulo-pagina encabezado-panel">RESERVAS</h1>
+
+@if (error()) {
+  <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+}
+@if (exito()) {
+  <p class="aviso aviso--ok" role="status">{{ exito() }}</p>
+}
+
+<p class="nota">Una reserva vence sola al pasar 30 días desde que se apartó, y sus copias vuelven a estar disponibles.</p>
+
+<div class="pestanas" role="group" aria-label="Filtrar por estado">
+  @for (e of estados; track e) {
+    <button class="pestana" type="button" [class.pestana--activa]="estado() === e" (click)="cambiarEstado(e)">{{ e || 'TODAS' }}</button>
+  }
+</div>
+
+@if (cargando()) {
+  <p class="cargando">¡Buscando reservas!...</p>
+} @else {
+  <div class="tabla-marco">
+    <table class="tabla">
+      <thead>
+        <tr><th>N.º</th><th>Cliente</th><th>Creada</th><th>Vence</th><th>Copias</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+        @for (r of reservas(); track r.consecutivo) {
+          <tr>
+            <td><strong>{{ r.consecutivo }}</strong></td>
+            <td>{{ r.clienteTipoDocumento }} {{ r.clienteNumeroDocumento }}</td>
+            <td>{{ fecha(r.fechaCreacion) }}</td>
+            <td>{{ fecha(r.fechaVencimiento) }}</td>
+            <td>
+              @for (a of r.apartados; track a.idEjemplar) {
+                <div>{{ a.codigoEtiqueta }} · {{ a.nombreCarta }}</div>
+              }
+            </td>
+            <td><span [class]="'sello ' + claseEstado(r.estado)">{{ r.estado }}</span></td>
+            <td>
+              @if (r.estado === 'ACTIVA') {
+                <button class="boton-chico" type="button" (click)="abrirEntrega(r)">Entregar</button>
+              }
+            </td>
+          </tr>
+          @if (entregando() === r.consecutivo) {
+            <tr>
+              <td colspan="7">
+                <form (ngSubmit)="entregar(r)">
+                  <strong>¿Qué se lleva el cliente?</strong>
+                  <div class="casillas">
+                    @for (a of r.apartados; track a.idEjemplar) {
+                      <label><input type="checkbox" [name]="'copia' + a.idEjemplar" [(ngModel)]="seleccion[a.idEjemplar]" /> {{ a.codigoEtiqueta }} · {{ a.nombreCarta }}</label>
+                    }
+                  </div>
+                  <label class="campo">Observaciones <input name="observaciones" [(ngModel)]="observaciones" /></label>
+                  <p class="nota">Lo que no se marque vuelve a estar disponible.</p>
+                  <div class="acciones">
+                    <button class="boton-chico" type="submit" [disabled]="ocupado() || ningunoElegido(r)">Registrar entrega</button>
+                    <button class="boton-chico" type="button" (click)="entregando.set(null)">Cancelar</button>
+                  </div>
+                </form>
+              </td>
+            </tr>
+          }
+        } @empty {
+          <tr><td colspan="7">No hay reservas con ese estado.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

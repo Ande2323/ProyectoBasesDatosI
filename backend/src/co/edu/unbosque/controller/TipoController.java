@@ -35,10 +35,6 @@ public class TipoController {
 		return tipoDAO.actualizarTipo(TipoMapper.toEntity(dto), idTipo);
 	}
 
-	public boolean eliminarTipo(int idTipo) {
-		return tipoDAO.eliminarTipo(idTipo);
-	}
-
 	public List<TipoDTO> mostrarTipos() {
 		return tipoDAO.mostrarTipos().stream().map(TipoMapper::toDTO).toList();
 	}

@@ -35,10 +35,6 @@ public class RarezaController {
 		return rarezaDAO.actualizarRareza(RarezaMapper.toEntity(dto), idRareza);
 	}
 
-	public boolean eliminarRareza(int idRareza) {
-		return rarezaDAO.eliminarRareza(idRareza);
-	}
-
 	public List<RarezaDTO> mostrarRarezas() {
 		return rarezaDAO.mostrarRarezas().stream().map(RarezaMapper::toDTO).toList();
 	}

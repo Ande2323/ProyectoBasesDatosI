@@ -9,6 +9,7 @@ import java.util.Map;
 import com.sun.net.httpserver.HttpExchange;
 
 import co.edu.unbosque.controller.ReservaController;
+import co.edu.unbosque.dto.ApartadoDTO;
 import co.edu.unbosque.dto.ReservaDTO;
 import co.edu.unbosque.util.GestorSesiones.SesionActiva;
 import co.edu.unbosque.util.JsonUtil;
@@ -20,9 +21,9 @@ import co.edu.unbosque.util.JsonUtil;
  * GET  /api/reservas?estado=ACTIVA   el cliente ve las suyas; el personal, todas (con filtro)
  * GET  /api/reservas/{n}             una reserva
  * PUT  /api/reservas/{n}/cancelar    el cliente cancela la suya
- * PUT  /api/reservas/{n}/vencer      el personal la marca como vencida
  *
- * Reclamar una reserva se hace registrando la salida: POST /api/salidas.
+ * Reclamar una reserva se hace registrando la salida: POST /api/salidas. Nadie
+ * marca una reserva como vencida: vence sola al pasar su plazo (sección H).
  */
 public class ReservaHandler extends ManejadorBase {
 
@@ -36,9 +37,6 @@ public class ReservaHandler extends ManejadorBase {
 	protected List<String> rolesPermitidos(String metodo, String subruta) {
 		if ("GET".equals(metodo)) {
 			return CON_SESION;
-		}
-		if ("PUT".equals(metodo) && subruta.endsWith("/vencer")) {
-			return PERSONAL;
 		}
 		return SOLO_CLIENTE;
 	}
@@ -74,8 +72,6 @@ public class ReservaHandler extends ManejadorBase {
 		} else if ("PUT".equals(metodo) && "cancelar".equals(partes[1])) {
 			responder(intercambio, consecutivo,
 					reservaController.cancelarReserva(consecutivo, obtenerSesion(intercambio)));
-		} else if ("PUT".equals(metodo) && "vencer".equals(partes[1])) {
-			responder(intercambio, consecutivo, reservaController.marcarVencida(consecutivo));
 		} else {
 			enviarError(intercambio, 404, "Ruta no encontrada");
 		}
@@ -139,6 +135,18 @@ public class ReservaHandler extends ManejadorBase {
 		mapa.put("clienteNumeroDocumento", dto.clienteNumeroDocumento());
 		mapa.put("consecutivoSalida", dto.consecutivoSalida());
 		mapa.put("ejemplares", new ArrayList<Object>(dto.ejemplares()));
+		List<Object> apartados = new ArrayList<>();
+		for (ApartadoDTO apartado : reservaController.mostrarApartados(dto.consecutivo())) {
+			Map<String, Object> fila = new LinkedHashMap<>();
+			fila.put("idEjemplar", apartado.idEjemplar());
+			fila.put("codigoEtiqueta", apartado.codigoEtiqueta());
+			fila.put("idCarta", apartado.idCarta());
+			fila.put("nombreCarta", apartado.nombreCarta());
+			fila.put("codigoCondicion", apartado.codigoCondicion());
+			fila.put("precioSugerido", apartado.precioSugerido());
+			apartados.add(fila);
+		}
+		mapa.put("apartados", apartados);
 		return mapa;
 	}
 }

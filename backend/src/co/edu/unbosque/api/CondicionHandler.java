@@ -19,7 +19,6 @@ import co.edu.unbosque.util.JsonUtil;
  * GET  /api/condiciones/{codigo} busca una
  * POST /api/condiciones         crea  (cuerpo: codigoCondicion, nombre, factorAjuste)
  * PUT  /api/condiciones/{codigo} actualiza nombre y factorAjuste
- * DELETE /api/condiciones/{codigo} elimina (solo si ningún ejemplar la usa)
  */
 public class CondicionHandler extends ManejadorBase {
 
@@ -42,8 +41,6 @@ public class CondicionHandler extends ManejadorBase {
 			crear(intercambio);
 		} else if ("PUT".equals(metodo) && !codigo.isEmpty()) {
 			actualizar(intercambio, codigo);
-		} else if ("DELETE".equals(metodo) && !codigo.isEmpty()) {
-			eliminar(intercambio, codigo);
 		} else {
 			metodoNoPermitido(intercambio);
 		}
@@ -94,18 +91,6 @@ public class CondicionHandler extends ManejadorBase {
 			return;
 		}
 		enviarMensaje(intercambio, 200, "Condición " + codigo + " actualizada");
-	}
-
-	private void eliminar(HttpExchange intercambio, String codigo) throws IOException {
-		if (condicionController.buscarCondicion(codigo) == null) {
-			enviarError(intercambio, 404, "No existe la condición " + codigo);
-			return;
-		}
-		if (!condicionController.eliminarCondicion(codigo)) {
-			enviarError(intercambio, 409, "No se puede eliminar: hay ejemplares con esta condición");
-			return;
-		}
-		enviarMensaje(intercambio, 200, "Condición " + codigo + " eliminada");
 	}
 
 	private Map<String, Object> aMapa(CondicionDTO dto) {

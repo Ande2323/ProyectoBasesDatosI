@@ -1,0 +1,46 @@
+<main class="pagina angosta">
+  <section class="vineta">
+    <h1 class="titulo-pagina">CREA TU CUENTA</h1>
+    <p>Regístrate para ver el catálogo y apartar cartas desde tu perfil.</p>
+    @if (error()) {
+      <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+    }
+    <form (ngSubmit)="registrar()">
+      <div class="dos">
+        <label class="campo">
+          Tipo de documento
+          <select name="tipo" [(ngModel)]="datos.tipoDocumento">
+            <option value="CC">Cédula de ciudadanía</option>
+            <option value="CE">Cédula de extranjería</option>
+            <option value="TI">Tarjeta de identidad</option>
+            <option value="PA">Pasaporte</option>
+          </select>
+        </label>
+        <label class="campo">
+          Número de documento
+          <input name="numero" [(ngModel)]="datos.numeroDocumento" required />
+        </label>
+        <label class="campo">
+          Nombres
+          <input name="nombres" [(ngModel)]="datos.nombres" autocomplete="given-name" required />
+        </label>
+        <label class="campo">
+          Apellidos
+          <input name="apellidos" [(ngModel)]="datos.apellidos" autocomplete="family-name" required />
+        </label>
+        <label class="campo">
+          Usuario
+          <input name="usuario" [(ngModel)]="datos.nombreUsuario" autocomplete="username" required />
+        </label>
+        <label class="campo">
+          Contraseña (mínimo 8 caracteres)
+          <input name="contrasena" type="password" [(ngModel)]="datos.contrasena" autocomplete="new-password" required />
+        </label>
+      </div>
+      <button class="boton boton--ancho" type="submit" [disabled]="enviando()">
+        {{ enviando() ? 'Creando...' : '¡REGISTRARME!' }}
+      </button>
+    </form>
+    <p class="pie">¿Ya tienes cuenta? <a routerLink="/entrar">Inicia sesión</a></p>
+  </section>
+</main>

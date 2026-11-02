@@ -19,7 +19,6 @@ import co.edu.unbosque.util.JsonUtil;
  * GET    /api/idiomas/{id}     busca uno
  * POST   /api/idiomas          crea
  * PUT    /api/idiomas/{id}     actualiza
- * DELETE /api/idiomas/{id}     elimina (solo si nadie lo usa)
  */
 public class IdiomaHandler extends ManejadorBase {
 
@@ -50,8 +49,6 @@ public class IdiomaHandler extends ManejadorBase {
 			crear(intercambio);
 		} else if ("PUT".equals(metodo) && idIdioma != null) {
 			actualizar(intercambio, idIdioma);
-		} else if ("DELETE".equals(metodo) && idIdioma != null) {
-			eliminar(intercambio, idIdioma);
 		} else {
 			metodoNoPermitido(intercambio);
 		}
@@ -103,18 +100,6 @@ public class IdiomaHandler extends ManejadorBase {
 			return;
 		}
 		enviarMensaje(intercambio, 200, "Registro " + idIdioma + " actualizado");
-	}
-
-	private void eliminar(HttpExchange intercambio, Integer idIdioma) throws IOException {
-		if (idiomaController.buscarIdioma(idIdioma) == null) {
-			enviarError(intercambio, 404, "No existe el idioma " + idIdioma);
-			return;
-		}
-		if (!idiomaController.eliminarIdioma(idIdioma)) {
-			enviarError(intercambio, 409, "No se puede eliminar: hay registros que lo usan");
-			return;
-		}
-		enviarMensaje(intercambio, 200, "Registro " + idIdioma + " eliminado");
 	}
 
 	/** Convierte el cuerpo en DTO; el id viene de la ruta (0 al crear). */

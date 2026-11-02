@@ -12,8 +12,21 @@ public interface EjemplarDAO {
 
 	public boolean crearEjemplar(Ejemplar e);
 
-	/** Cambia ubicación, condición y observaciones. El precio sugerido se conserva. */
+	/** Solo para deshacer un ingreso cuya imagen no se pudo guardar. Nada más borra ejemplares. */
+	public void deshacerIngreso(int idEjemplar);
+
+	/** Cambia ubicación, condición y observaciones. */
 	public boolean actualizarEjemplar(Ejemplar e, int idEjemplar);
+
+	/**
+	 * Recalculan el precio sugerido (precio vigente × factor de la condición) de las
+	 * copias que siguen en la tienda. Las VENDIDAS y las de BAJA conservan el suyo.
+	 */
+	public void recalcularPreciosDeImpresion(int idCarta, int numeroImpresion);
+
+	public void recalcularPrecioDeEjemplar(int idEjemplar);
+
+	public void recalcularPreciosDeCondicion(String codigoCondicion);
 
 	/** Solo si está DISPONIBLE: una baja no genera salida. */
 	public boolean darDeBajaEjemplar(int idEjemplar, String observacionesDanos);

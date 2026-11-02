@@ -1,0 +1,138 @@
+<div class="encabezado-panel">
+  <h1 class="titulo-pagina">USUARIOS</h1>
+  @if (pestana() === 'empleados') {
+    <button class="boton" type="button" (click)="abierto.set(!abierto())">{{ abierto() ? 'CERRAR' : '¡NUEVO EMPLEADO!' }}</button>
+  }
+</div>
+
+<div class="pestanas" role="group" aria-label="Elegir lista">
+  <button class="pestana" type="button" [class.pestana--activa]="pestana() === 'empleados'" (click)="pestana.set('empleados')">Empleados</button>
+  <button class="pestana" type="button" [class.pestana--activa]="pestana() === 'clientes'" (click)="pestana.set('clientes')">Clientes</button>
+  <button class="pestana" type="button" [class.pestana--activa]="pestana() === 'cuentas'" (click)="pestana.set('cuentas')">Cuentas</button>
+</div>
+
+@if (error()) {
+  <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+}
+@if (exito()) {
+  <p class="aviso aviso--ok" role="status">{{ exito() }}</p>
+}
+@if (cargando()) {
+  <p class="cargando">¡Cargando!...</p>
+}
+
+@switch (pestana()) {
+  @case ('empleados') {
+    @if (abierto()) {
+      <section class="vineta formulario">
+        <h2 class="titulo-seccion">NUEVO EMPLEADO</h2>
+        <form (ngSubmit)="registrar()">
+          <div class="formulario-rejilla">
+            <label class="campo">
+              Tipo de documento
+              <select name="tipo" [(ngModel)]="nuevo.tipoDocumento">
+                <option value="CC">CC</option>
+                <option value="CE">CE</option>
+                <option value="TI">TI</option>
+                <option value="PA">PA</option>
+              </select>
+            </label>
+            <label class="campo">Número de documento <input name="numero" [(ngModel)]="nuevo.numeroDocumento" required /></label>
+            <label class="campo">Nombres <input name="nombres" [(ngModel)]="nuevo.nombres" required /></label>
+            <label class="campo">Apellidos <input name="apellidos" [(ngModel)]="nuevo.apellidos" required /></label>
+            <label class="campo">Cargo <input name="cargo" [(ngModel)]="nuevo.cargo" /></label>
+            <label class="campo">Fecha de vinculación <input name="fecha" type="date" [(ngModel)]="nuevo.fechaVinculacion" required /></label>
+            <label class="campo">Usuario <input name="usuario" [(ngModel)]="nuevo.nombreUsuario" autocomplete="off" required /></label>
+            <label class="campo">Contraseña (mínimo 8) <input name="clave" type="password" [(ngModel)]="nuevo.contrasena" autocomplete="new-password" required /></label>
+            <label class="campo">
+              Rol
+              <select name="rol" [(ngModel)]="nuevo.codigoRol">
+                <option value="EMP">Empleado</option>
+                <option value="ADM">Administrador</option>
+              </select>
+            </label>
+          </div>
+          <button class="boton boton--azul" type="submit" [disabled]="ocupado()">REGISTRAR</button>
+        </form>
+      </section>
+    }
+    <div class="tabla-marco">
+      <table class="tabla">
+        <thead><tr><th>Documento</th><th>Nombre</th><th>Cargo</th><th>Vinculación</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+          @for (e of empleados(); track e.numeroDocumento) {
+            <tr>
+              <td>{{ e.tipoDocumento }} {{ e.numeroDocumento }}</td>
+              <td><strong>{{ e.nombres }} {{ e.apellidos }}</strong></td>
+              <td>{{ e.cargo }}</td>
+              <td>{{ fecha(e.fechaVinculacion) }}</td>
+              <td>{{ usuarioDe(e.idCuentaU) }}</td>
+              <td><span [class]="e.estado === 'ACTIVO' ? 'sello sello--activa' : 'sello sello--vencida'">{{ e.estado }}</span></td>
+              <td>
+                @if (e.estado === 'ACTIVO' && e.idCuentaU !== sesion.actual()?.idCuentaU) {
+                  <button class="boton-chico boton-chico--peligro" type="button" [disabled]="ocupado()" (click)="darDeBaja(e)">Dar de baja</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="7">No hay empleados.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  @case ('clientes') {
+    <div class="tabla-marco">
+      <table class="tabla">
+        <thead><tr><th>Documento</th><th>Nombre</th><th>Usuario</th></tr></thead>
+        <tbody>
+          @for (c of clientes(); track c.numeroDocumento) {
+            <tr>
+              <td>{{ c.tipoDocumento }} {{ c.numeroDocumento }}</td>
+              <td><strong>{{ c.nombres }} {{ c.apellidos }}</strong></td>
+              <td>{{ usuarioDe(c.idCuentaU) }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="3">No hay clientes.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  @case ('cuentas') {
+    <div class="tabla-marco">
+      <table class="tabla">
+        <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Último acceso</th><th>Acciones</th></tr></thead>
+        <tbody>
+          @for (c of cuentas(); track c.idCuentaU) {
+            <tr>
+              <td><strong>{{ c.nombreUsuario }}</strong></td>
+              <td>{{ nombreRol(c.codigoRol) }}</td>
+              <td><span [class]="c.estado === 'ACTIVA' ? 'sello sello--activa' : 'sello sello--cancelada'">{{ c.estado }}</span></td>
+              <td>{{ c.ultimoAcceso?.replace('T', ' ')?.slice(0, 16) ?? '—' }}</td>
+              <td>
+                @if (esPropia(c)) {
+                  <span class="nota">Tu cuenta</span>
+                } @else {
+                  <div class="acciones">
+                    @if (c.estado !== 'ACTIVA') {
+                      <button class="boton-chico" type="button" [disabled]="ocupado()" (click)="cambiarEstado(c, 'ACTIVA')">Activar</button>
+                    } @else {
+                      <button class="boton-chico" type="button" [disabled]="ocupado()" (click)="cambiarEstado(c, 'BLOQUEADA')">Bloquear</button>
+                      <button class="boton-chico boton-chico--peligro" type="button" [disabled]="ocupado()" (click)="cambiarEstado(c, 'INACTIVA')">Dar de baja</button>
+                    }
+                    @if (c.codigoRol === 'EMP') {
+                      <button class="boton-chico" type="button" [disabled]="ocupado()" (click)="cambiarRol(c, 'ADM')">Hacer admin</button>
+                    } @else if (c.codigoRol === 'ADM') {
+                      <button class="boton-chico" type="button" [disabled]="ocupado()" (click)="cambiarRol(c, 'EMP')">Hacer empleado</button>
+                    }
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}

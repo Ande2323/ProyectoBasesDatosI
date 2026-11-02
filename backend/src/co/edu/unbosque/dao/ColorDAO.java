@@ -10,8 +10,6 @@ public interface ColorDAO {
 
 	public boolean actualizarColor(Color color, int idColor);
 
-	public boolean eliminarColor(int idColor);
-
 	public List<Color> mostrarColores();
 
 	public Color buscarColor(int idColor);

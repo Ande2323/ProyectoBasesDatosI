@@ -1,0 +1,160 @@
+<div class="encabezado-panel">
+  <h1 class="titulo-pagina">CARTAS</h1>
+  <button class="boton" type="button" (click)="nueva()">{{ abierto() ? 'CERRAR' : '¡NUEVA CARTA!' }}</button>
+</div>
+
+@if (error()) {
+  <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+}
+@if (exito()) {
+  <p class="aviso aviso--ok" role="status">{{ exito() }}</p>
+}
+
+@if (abierto()) {
+  <section class="vineta formulario">
+    <h2 class="titulo-seccion">{{ idEditando() === null ? 'NUEVA CARTA' : 'EDITAR CARTA' }}</h2>
+    <form (ngSubmit)="guardar()">
+      <div class="formulario-rejilla">
+        <label class="campo">Nombre oficial <input name="nombre" [(ngModel)]="forma.nombreOficial" required /></label>
+        <label class="campo">Coste de maná <input name="coste" [(ngModel)]="forma.costeMana" placeholder="{2}{U}{U}" /></label>
+        <label class="campo">Poder <input name="poder" [(ngModel)]="forma.poder" /></label>
+        <label class="campo">Resistencia <input name="resistencia" [(ngModel)]="forma.resistencia" /></label>
+        <label class="campo">Lealtad <input name="lealtad" [(ngModel)]="forma.lealtad" /></label>
+      </div>
+      <label class="campo">Texto de oráculo <textarea name="texto" [(ngModel)]="forma.textoOraculo"></textarea></label>
+      <strong>Colores</strong>
+      <div class="casillas">
+        @for (c of colores(); track c.idColor) {
+          <label><input type="checkbox" [name]="'color' + c.idColor" [(ngModel)]="coloresElegidos[c.idColor]" /> {{ c.nombreColor }}</label>
+        }
+      </div>
+      <strong>Tipos (al menos uno)</strong>
+      <div class="casillas">
+        @for (t of tipos(); track t.idTipo) {
+          <label><input type="checkbox" [name]="'tipo' + t.idTipo" [(ngModel)]="tiposElegidos[t.idTipo]" /> {{ t.nombre }}</label>
+        }
+      </div>
+      <button class="boton boton--azul" type="submit" [disabled]="ocupado()">GUARDAR</button>
+    </form>
+  </section>
+}
+
+<div class="herramientas">
+  <input type="search" placeholder="Buscar carta..." aria-label="Buscar carta" [ngModel]="texto()" (ngModelChange)="texto.set($event)" />
+</div>
+
+@if (cargando()) {
+  <p class="cargando">¡Abriendo el archivo!...</p>
+} @else {
+  <div class="tabla-marco">
+    <table class="tabla">
+      <thead><tr><th>Carta</th><th>Coste</th><th>Valor de maná</th><th>Impresiones</th><th>Acciones</th></tr></thead>
+      <tbody>
+        @for (c of visibles(); track c.idCarta) {
+          <tr>
+            <td><strong>{{ c.nombreOficial }}</strong></td>
+            <td>{{ c.costeMana }}</td>
+            <td>{{ c.valorMana }}</td>
+            <td>
+              <button class="boton-chico" type="button" (click)="alternarImpresiones(c)">
+                {{ cartaAbierta() === c.idCarta ? 'Ocultar' : 'Ver impresiones' }}
+              </button>
+            </td>
+            <td>
+              <div class="acciones">
+                <button class="boton-chico" type="button" (click)="editar(c)">Editar</button>
+                @if (sesion.esAdmin()) {
+                  <button class="boton-chico boton-chico--peligro" type="button" [disabled]="ocupado()" (click)="eliminar(c)">Eliminar</button>
+                }
+              </div>
+            </td>
+          </tr>
+          @if (cartaAbierta() === c.idCarta) {
+            <tr>
+              <td colspan="5">
+                <table class="tabla">
+                  <thead><tr><th>N.º</th><th>Colección</th><th>Edición</th><th>Idioma</th><th>Rareza</th><th>Artista</th><th>Foil</th><th>Origen</th><th></th></tr></thead>
+                  <tbody>
+                    @for (i of deCartaAbierta(); track i.numeroImpresion) {
+                      <tr>
+                        <td>{{ i.numeroImpresion }}</td>
+                        <td>{{ i.numeroColeccion }}</td>
+                        <td>{{ nombreEdicion(i.idEdicion) }}</td>
+                        <td>{{ nombreIdioma(i.idIdioma) }}</td>
+                        <td>{{ nombreRareza(i.idRareza) }}</td>
+                        <td>{{ nombreArtista(i.idArtista) }}</td>
+                        <td>{{ i.foil ? 'Sí' : 'No' }}</td>
+                        <td>{{ i.primeraEdicion ? 'Primera edición' : 'Reimpresión de ' + i.originalNumeroImpresion }}</td>
+                        <td>
+                          @if (sesion.esAdmin()) {
+                            <button class="boton-chico boton-chico--peligro" type="button" [disabled]="ocupado()" (click)="eliminarImpresion(i)">Eliminar</button>
+                          }
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="9">Esta carta aún no tiene impresiones.</td></tr>
+                    }
+                  </tbody>
+                </table>
+                <form (ngSubmit)="crearImpresion(c.idCarta)">
+                  <div class="formulario-rejilla">
+                    <label class="campo">Número de colección <input name="coleccion" [(ngModel)]="impresion.numeroColeccion" required /></label>
+                    <label class="campo">
+                      Edición
+                      <select name="edicion" [(ngModel)]="impresion.idEdicion" required>
+                        <option [ngValue]="null">Elige</option>
+                        @for (e of ediciones(); track e.idEdicion) {
+                          <option [ngValue]="e.idEdicion">{{ e.nombre }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label class="campo">
+                      Idioma
+                      <select name="idioma" [(ngModel)]="impresion.idIdioma" required>
+                        <option [ngValue]="null">Elige</option>
+                        @for (i of idiomas(); track i.idIdioma) {
+                          <option [ngValue]="i.idIdioma">{{ i.nombre }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label class="campo">
+                      Rareza
+                      <select name="rareza" [(ngModel)]="impresion.idRareza" required>
+                        <option [ngValue]="null">Elige</option>
+                        @for (r of rarezas(); track r.idRareza) {
+                          <option [ngValue]="r.idRareza">{{ r.nombre }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label class="campo">
+                      Artista
+                      <select name="artista" [(ngModel)]="impresion.idArtista" required>
+                        <option [ngValue]="null">Elige</option>
+                        @for (a of artistas(); track a.idArtista) {
+                          <option [ngValue]="a.idArtista">{{ a.nombre }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label class="campo">
+                      Reimpresión de
+                      <select name="original" [(ngModel)]="impresion.originalNumeroImpresion">
+                        <option [ngValue]="null">Ninguna (primera edición)</option>
+                        @for (o of originales(); track o.numeroImpresion) {
+                          <option [ngValue]="o.numeroImpresion">{{ nombreEdicion(o.idEdicion) }}</option>
+                        }
+                      </select>
+                    </label>
+                  </div>
+                  <div class="casillas"><label><input type="checkbox" name="foil" [(ngModel)]="impresion.foil" /> Foil</label></div>
+                  <button class="boton-chico" type="submit" [disabled]="ocupado()">Agregar impresión</button>
+                </form>
+              </td>
+            </tr>
+          }
+        } @empty {
+          <tr><td colspan="5">No hay cartas con esa búsqueda.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

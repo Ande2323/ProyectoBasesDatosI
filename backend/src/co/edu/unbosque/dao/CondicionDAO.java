@@ -10,8 +10,6 @@ public interface CondicionDAO {
 
 	public boolean actualizarCondicion(Condicion c, String codigoCondicion);
 
-	public boolean eliminarCondicion(String codigoCondicion);
-
 	public List<Condicion> mostrarCondiciones();
 
 	public Condicion buscarCondicion(String codigoCondicion);

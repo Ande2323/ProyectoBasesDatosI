@@ -1,0 +1,6 @@
+.angosta { max-width: 760px; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; margin-top: 12px; }
+.pie { text-align: center; margin-top: 16px; }
+@media (max-width: 600px) {
+  .dos { grid-template-columns: 1fr; }
+}

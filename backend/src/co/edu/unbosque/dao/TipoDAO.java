@@ -10,8 +10,6 @@ public interface TipoDAO {
 
 	public boolean actualizarTipo(Tipo tipo, int idTipo);
 
-	public boolean eliminarTipo(int idTipo);
-
 	public List<Tipo> mostrarTipos();
 
 	public Tipo buscarTipo(int idTipo);

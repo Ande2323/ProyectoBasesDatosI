@@ -1,0 +1,51 @@
+<main class="pagina">
+  <h1 class="titulo-pagina">MIS RESERVAS</h1>
+
+  @if (error()) {
+    <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+  }
+  @if (exito()) {
+    <p class="aviso aviso--ok" role="status">{{ exito() }}</p>
+  }
+  @if (cargando()) {
+    <p class="cargando">¡Buscando tus reservas!...</p>
+  }
+
+  <div class="lista">
+    @for (reserva of reservas(); track reserva.consecutivo) {
+      <article class="vineta reserva">
+        <header>
+          <h2 class="titulo-seccion">RESERVA {{ reserva.consecutivo }}</h2>
+          <span class="sello" [class]="'sello ' + claseEstado(reserva.estado)">{{ reserva.estado }}</span>
+        </header>
+        <p class="fechas">
+          Creada el {{ fecha(reserva.fechaCreacion) }}
+          @if (reserva.estado === 'ACTIVA') {
+            · <strong>Reclámala antes del {{ fecha(reserva.fechaVencimiento) }}</strong>
+          }
+        </p>
+        <ul>
+          @for (a of reserva.apartados; track a.idEjemplar) {
+            <li>
+              <a [routerLink]="['/carta', a.idCarta]">{{ a.nombreCarta }}</a>
+              <span class="codigo">{{ a.codigoEtiqueta }} · {{ a.codigoCondicion }}</span>
+              <span class="monto">{{ precio(a.precioSugerido) }}</span>
+            </li>
+          }
+        </ul>
+        @if (reserva.estado === 'ACTIVA') {
+          <button class="boton boton--blanco" type="button" [disabled]="cancelando() !== null" (click)="cancelar(reserva)">
+            {{ cancelando() === reserva.consecutivo ? 'Cancelando...' : 'Cancelar reserva' }}
+          </button>
+        }
+      </article>
+    } @empty {
+      @if (!cargando()) {
+        <div class="vineta vacia">
+          <p>Todavía no has apartado ninguna carta.</p>
+          <a class="boton" routerLink="/catalogo">¡VER EL CATÁLOGO!</a>
+        </div>
+      }
+    }
+  </div>
+</main>

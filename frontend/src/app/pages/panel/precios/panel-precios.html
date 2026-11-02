@@ -1,0 +1,58 @@
+<h1 class="titulo-pagina encabezado-panel">PRECIOS</h1>
+
+@if (error()) {
+  <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+}
+@if (exito()) {
+  <p class="aviso aviso--ok" role="status">{{ exito() }}</p>
+}
+
+<section class="vineta formulario">
+  <div class="formulario-rejilla">
+    <label class="campo">
+      Carta
+      <select [(ngModel)]="idCarta" (ngModelChange)="alCambiarCarta()">
+        <option [ngValue]="null">Elige una carta</option>
+        @for (c of cartas(); track c.idCarta) {
+          <option [ngValue]="c.idCarta">{{ c.nombreOficial }}</option>
+        }
+      </select>
+    </label>
+    <label class="campo">
+      Impresión
+      <select [(ngModel)]="numero" (ngModelChange)="consultar()">
+        <option [ngValue]="null">Elige una impresión</option>
+        @for (i of impresionesDe(); track i.numeroImpresion) {
+          <option [ngValue]="i.numeroImpresion">{{ etiqueta(i) }}</option>
+        }
+      </select>
+    </label>
+  </div>
+</section>
+
+@if (numero !== null) {
+  <section class="vineta vineta--amarilla formulario">
+    <h2 class="titulo-seccion">CARGAR PRECIO</h2>
+    <p class="nota">El precio se puede cambiar una vez al día y queda con la fecha de hoy. El historial no se modifica. Las copias disponibles y apartadas de esta impresión toman el precio nuevo; las vendidas y las dadas de baja conservan el suyo.</p>
+    <form (ngSubmit)="registrar()">
+      <div class="formulario-rejilla">
+        <label class="campo">Valor <input name="valor" type="number" min="0" step="0.01" [(ngModel)]="valor" required /></label>
+        <label class="campo">Fuente <input name="fuente" [(ngModel)]="fuente" placeholder="TCGplayer" /></label>
+      </div>
+      <button class="boton boton--azul" type="submit" [disabled]="ocupado() || !valor">GUARDAR PRECIO</button>
+    </form>
+  </section>
+
+  <div class="tabla-marco">
+    <table class="tabla">
+      <thead><tr><th>Fecha</th><th class="numero">Valor</th><th>Fuente</th></tr></thead>
+      <tbody>
+        @for (p of historial(); track p.fecha) {
+          <tr><td>{{ fecha(p.fecha) }}</td><td class="numero">{{ precio(p.valor) }}</td><td>{{ p.fuenteCotizacion }}</td></tr>
+        } @empty {
+          <tr><td colspan="3">Esta impresión aún no tiene precios.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

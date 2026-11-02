@@ -23,8 +23,14 @@ public class EjemplarDAOImpl implements EjemplarDAO {
 	private static final String INSERTAR = "INSERT INTO ejemplar (codigo_etiqueta, ubicacion, estado, precio_sugerido, "
 			+ "fecha_ingreso, observaciones_danos, impresion_carta_id_carta, impresion_numero_impresion, "
 			+ "condicion_codigo_condicion) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	private static final String DESHACER = "DELETE FROM ejemplar WHERE id_ejemplar = ?";
 	private static final String ACTUALIZAR = "UPDATE ejemplar SET ubicacion = ?, condicion_codigo_condicion = ?, "
 			+ "observaciones_danos = ? WHERE id_ejemplar = ?";
+	private static final String RECALCULAR = "UPDATE ejemplar e SET precio_sugerido = (SELECT ROUND(p.valor * c.factor_ajuste, 2) "
+			+ "FROM precio_referencia p JOIN condicion c ON c.codigo_condicion = e.condicion_codigo_condicion "
+			+ "WHERE p.impresion_carta_id_carta = e.impresion_carta_id_carta "
+			+ "AND p.impresion_numero_impresion = e.impresion_numero_impresion ORDER BY p.fecha DESC LIMIT 1) "
+			+ "WHERE e.estado IN ('DISPONIBLE', 'RESERVADO') AND ";
 	private static final String DAR_DE_BAJA = "UPDATE ejemplar SET estado = 'BAJA', "
 			+ "observaciones_danos = COALESCE(?, observaciones_danos) WHERE id_ejemplar = ? AND estado = 'DISPONIBLE'";
 	private static final String MOSTRAR = "SELECT " + COLUMNAS + " FROM ejemplar";
@@ -59,6 +65,17 @@ public class EjemplarDAOImpl implements EjemplarDAO {
 	}
 
 	@Override
+	public void deshacerIngreso(int idEjemplar) {
+		try (Connection conexion = ConexionBD.obtenerConexion();
+				PreparedStatement ps = conexion.prepareStatement(DESHACER)) {
+			ps.setInt(1, idEjemplar);
+			ps.executeUpdate();
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	@Override
 	public boolean actualizarEjemplar(Ejemplar e, int idEjemplar) {
 		try (Connection conexion = ConexionBD.obtenerConexion();
 				PreparedStatement ps = conexion.prepareStatement(ACTUALIZAR)) {
@@ -73,6 +90,33 @@ public class EjemplarDAOImpl implements EjemplarDAO {
 			ex.printStackTrace();
 		}
 		return false;
+	}
+
+	@Override
+	public void recalcularPreciosDeImpresion(int idCarta, int numeroImpresion) {
+		recalcular("e.impresion_carta_id_carta = ? AND e.impresion_numero_impresion = ?", idCarta, numeroImpresion);
+	}
+
+	@Override
+	public void recalcularPrecioDeEjemplar(int idEjemplar) {
+		recalcular("e.id_ejemplar = ?", idEjemplar);
+	}
+
+	@Override
+	public void recalcularPreciosDeCondicion(String codigoCondicion) {
+		recalcular("e.condicion_codigo_condicion = ?", codigoCondicion);
+	}
+
+	private void recalcular(String filtro, Object... valores) {
+		try (Connection conexion = ConexionBD.obtenerConexion();
+				PreparedStatement ps = conexion.prepareStatement(RECALCULAR + filtro)) {
+			for (int i = 0; i < valores.length; i++) {
+				ps.setObject(i + 1, valores[i]);
+			}
+			ps.executeUpdate();
+		} catch (SQLException ex) {
+			ex.printStackTrace();
+		}
 	}
 
 	@Override

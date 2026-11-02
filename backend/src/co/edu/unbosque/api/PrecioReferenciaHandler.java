@@ -1,8 +1,6 @@
 package co.edu.unbosque.api;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,10 +17,10 @@ import co.edu.unbosque.util.JsonUtil;
  *
  * GET  /api/precios?idCarta=1&numeroImpresion=2           historial, del más reciente al más antiguo
  * GET  /api/precios/vigente?idCarta=1&numeroImpresion=2   precio vigente
- * POST /api/precios                                       carga un precio (personal)
+ * POST /api/precios                                       cambia el precio, máximo una vez al día (personal)
  *
- * Cuerpo: {"idCarta": 1, "numeroImpresion": 2, "valor": 12000, "fecha": "2026-10-01",
- *          "fuenteCotizacion": "TCGplayer"}. Si no se envía la fecha, se toma la de hoy.
+ * Cuerpo: {"idCarta": 1, "numeroImpresion": 2, "valor": 12000, "fuenteCotizacion": "TCGplayer"}.
+ * La fecha siempre es la de hoy.
  */
 public class PrecioReferenciaHandler extends ManejadorBase {
 
@@ -88,17 +86,7 @@ public class PrecioReferenciaHandler extends ManejadorBase {
 			enviarError(intercambio, 400, "idCarta y numeroImpresion son obligatorios");
 			return;
 		}
-		LocalDate fecha = null;
-		String fechaTexto = leerTexto(json, "fecha");
-		if (fechaTexto != null && !fechaTexto.isBlank()) {
-			try {
-				fecha = LocalDate.parse(fechaTexto.trim());
-			} catch (DateTimeParseException e) {
-				enviarError(intercambio, 400, "La fecha debe venir como AAAA-MM-DD");
-				return;
-			}
-		}
-		PrecioReferenciaDTO dto = new PrecioReferenciaDTO(idCarta, numero, fecha, leerDecimal(json, "valor"),
+		PrecioReferenciaDTO dto = new PrecioReferenciaDTO(idCarta, numero, null, leerDecimal(json, "valor"),
 				leerTexto(json, "fuenteCotizacion"));
 		String motivo = precioReferenciaController.validarPrecio(dto);
 		if (motivo != null) {

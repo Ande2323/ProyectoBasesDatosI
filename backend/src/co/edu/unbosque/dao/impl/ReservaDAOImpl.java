@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import co.edu.unbosque.dao.ReservaDAO;
+import co.edu.unbosque.dto.ApartadoDTO;
 import co.edu.unbosque.model.Reserva;
 import co.edu.unbosque.util.ConexionBD;
 import co.edu.unbosque.util.JdbcUtil;
@@ -38,6 +39,10 @@ public class ReservaDAOImpl implements ReservaDAO {
 	private static final String MOSTRAR_CLIENTE = "SELECT " + COLUMNAS + " FROM reserva WHERE cliente_tipo_documento = ? "
 			+ "AND cliente_numero_documento = ? ORDER BY consecutivo DESC";
 	private static final String BUSCAR = "SELECT " + COLUMNAS + " FROM reserva WHERE consecutivo = ?";
+	private static final String APARTADOS = "SELECT e.id_ejemplar, e.codigo_etiqueta, c.id_carta, c.nombre_oficial, "
+			+ "e.condicion_codigo_condicion, e.precio_sugerido FROM ejemplar_reserva er "
+			+ "JOIN ejemplar e ON e.id_ejemplar = er.id_ejemplar JOIN carta c ON c.id_carta = e.impresion_carta_id_carta "
+			+ "WHERE er.consecutivo = ? ORDER BY e.id_ejemplar";
 	private static final String TODOS_LOS_APARTADOS = "SELECT consecutivo, id_ejemplar FROM ejemplar_reserva ORDER BY consecutivo, id_ejemplar";
 
 	@Override
@@ -92,11 +97,6 @@ public class ReservaDAOImpl implements ReservaDAO {
 		return cerrarYLiberar(consecutivo, "CANCELADA");
 	}
 
-	@Override
-	public boolean marcarVencida(int consecutivo) {
-		return cerrarYLiberar(consecutivo, "VENCIDA");
-	}
-
 	/**
 	 * Se llama en casi todas las peticiones. Por eso primero solo lee: lo normal es
 	 * que no haya nada que vencer, y así las peticiones simultáneas no se bloquean
@@ -135,6 +135,24 @@ public class ReservaDAOImpl implements ReservaDAO {
 	public Reserva buscarReserva(int consecutivo) {
 		List<Reserva> lista = consultar(BUSCAR, String.valueOf(consecutivo));
 		return lista.isEmpty() ? null : lista.get(0);
+	}
+
+	@Override
+	public List<ApartadoDTO> mostrarApartados(int consecutivo) {
+		List<ApartadoDTO> lista = new ArrayList<>();
+		try (Connection conexion = ConexionBD.obtenerConexion();
+				PreparedStatement ps = conexion.prepareStatement(APARTADOS)) {
+			ps.setInt(1, consecutivo);
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					lista.add(new ApartadoDTO(rs.getInt(1), rs.getString(2), rs.getInt(3), rs.getString(4),
+							rs.getString(5), rs.getBigDecimal(6)));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return lista;
 	}
 
 	// ----------------------------------------------------------------- apoyo

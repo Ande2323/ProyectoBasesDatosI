@@ -139,6 +139,23 @@ public abstract class ManejadorBase implements HttpHandler {
 		}
 	}
 
+	/** Lee hasta maximo + 1 bytes: si llega a tantos, quien lo usa sabe que se pasó del límite. */
+	protected byte[] leerCuerpoBinario(HttpExchange intercambio, int maximo) throws IOException {
+		try (InputStream entrada = intercambio.getRequestBody()) {
+			return entrada.readNBytes(maximo + 1);
+		}
+	}
+
+	protected void enviarBytes(HttpExchange intercambio, String tipo, byte[] bytes) throws IOException {
+		intercambio.getResponseHeaders().set("Content-Type", tipo);
+		intercambio.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+		intercambio.getResponseHeaders().set("Cache-Control", "no-cache");
+		intercambio.sendResponseHeaders(200, bytes.length);
+		try (OutputStream salida = intercambio.getResponseBody()) {
+			salida.write(bytes);
+		}
+	}
+
 	protected void enviarJson(HttpExchange intercambio, int codigo, String json) throws IOException {
 		byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
 		intercambio.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");

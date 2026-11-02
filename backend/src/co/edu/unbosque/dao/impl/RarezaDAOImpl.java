@@ -16,7 +16,6 @@ public class RarezaDAOImpl implements RarezaDAO {
 
 	private static final String INSERTAR = "INSERT INTO rareza (codigo, nombre) VALUES (?, ?)";
 	private static final String ACTUALIZAR = "UPDATE rareza SET codigo = ?, nombre = ? WHERE id_rareza = ?";
-	private static final String ELIMINAR = "DELETE FROM rareza WHERE id_rareza = ?";
 	private static final String MOSTRAR = "SELECT id_rareza, codigo, nombre FROM rareza ORDER BY id_rareza";
 	private static final String BUSCAR = "SELECT id_rareza, codigo, nombre FROM rareza WHERE id_rareza = ?";
 
@@ -61,20 +60,6 @@ public class RarezaDAOImpl implements RarezaDAO {
 	}
 
 	/** Solo borra si nadie lo usa: si hay registros que lo referencian, MySQL lo impide. */
-	@Override
-	public boolean eliminarRareza(int idRareza) {
-		try (Connection conexion = ConexionBD.obtenerConexion();
-				PreparedStatement ps = conexion.prepareStatement(ELIMINAR)) {
-			ps.setInt(1, idRareza);
-			return ps.executeUpdate() == 1;
-		} catch (SQLIntegrityConstraintViolationException e) {
-			return false; // está en uso
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-
 	@Override
 	public List<Rareza> mostrarRarezas() {
 		List<Rareza> lista = new ArrayList<>();

@@ -19,7 +19,6 @@ import co.edu.unbosque.util.JsonUtil;
  * GET    /api/colores/{id}     busca uno
  * POST   /api/colores          crea
  * PUT    /api/colores/{id}     actualiza
- * DELETE /api/colores/{id}     elimina (solo si nadie lo usa)
  */
 public class ColorHandler extends ManejadorBase {
 
@@ -50,8 +49,6 @@ public class ColorHandler extends ManejadorBase {
 			crear(intercambio);
 		} else if ("PUT".equals(metodo) && idColor != null) {
 			actualizar(intercambio, idColor);
-		} else if ("DELETE".equals(metodo) && idColor != null) {
-			eliminar(intercambio, idColor);
 		} else {
 			metodoNoPermitido(intercambio);
 		}
@@ -103,18 +100,6 @@ public class ColorHandler extends ManejadorBase {
 			return;
 		}
 		enviarMensaje(intercambio, 200, "Registro " + idColor + " actualizado");
-	}
-
-	private void eliminar(HttpExchange intercambio, Integer idColor) throws IOException {
-		if (colorController.buscarColor(idColor) == null) {
-			enviarError(intercambio, 404, "No existe el color " + idColor);
-			return;
-		}
-		if (!colorController.eliminarColor(idColor)) {
-			enviarError(intercambio, 409, "No se puede eliminar: hay registros que lo usan");
-			return;
-		}
-		enviarMensaje(intercambio, 200, "Registro " + idColor + " eliminado");
 	}
 
 	/** Convierte el cuerpo en DTO; el id viene de la ruta (0 al crear). */

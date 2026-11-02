@@ -19,7 +19,6 @@ import co.edu.unbosque.util.JsonUtil;
  * GET    /api/tipos/{id}     busca uno
  * POST   /api/tipos          crea
  * PUT    /api/tipos/{id}     actualiza
- * DELETE /api/tipos/{id}     elimina (solo si nadie lo usa)
  */
 public class TipoHandler extends ManejadorBase {
 
@@ -50,8 +49,6 @@ public class TipoHandler extends ManejadorBase {
 			crear(intercambio);
 		} else if ("PUT".equals(metodo) && idTipo != null) {
 			actualizar(intercambio, idTipo);
-		} else if ("DELETE".equals(metodo) && idTipo != null) {
-			eliminar(intercambio, idTipo);
 		} else {
 			metodoNoPermitido(intercambio);
 		}
@@ -103,18 +100,6 @@ public class TipoHandler extends ManejadorBase {
 			return;
 		}
 		enviarMensaje(intercambio, 200, "Registro " + idTipo + " actualizado");
-	}
-
-	private void eliminar(HttpExchange intercambio, Integer idTipo) throws IOException {
-		if (tipoController.buscarTipo(idTipo) == null) {
-			enviarError(intercambio, 404, "No existe el tipo " + idTipo);
-			return;
-		}
-		if (!tipoController.eliminarTipo(idTipo)) {
-			enviarError(intercambio, 409, "No se puede eliminar: hay registros que lo usan");
-			return;
-		}
-		enviarMensaje(intercambio, 200, "Registro " + idTipo + " eliminado");
 	}
 
 	/** Convierte el cuerpo en DTO; el id viene de la ruta (0 al crear). */

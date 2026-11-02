@@ -1,0 +1,24 @@
+.escena {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+  max-width: 1000px;
+  min-height: 100vh;
+  align-content: center;
+  margin: 0 auto;
+  padding: 24px;
+}
+.portada {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  background-image: repeating-conic-gradient(from 0deg at 15% 20%, rgba(255, 255, 255, 0.13) 0 4deg, transparent 4deg 12deg);
+}
+h1 { font-size: clamp(3.6rem, 9vw, 6rem); color: var(--amarillo); text-shadow: 4px 4px 0 var(--tinta); margin-top: 12px; }
+p { font-size: 1.1rem; margin: 10px 0 0; }
+.formulario h2 { margin-bottom: 16px; }
+.pie { font-size: 1rem; text-align: center; margin-top: 16px; }
+@media (max-width: 760px) {
+  .escena { grid-template-columns: 1fr; align-content: start; }
+}

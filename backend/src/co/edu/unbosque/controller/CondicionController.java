@@ -3,7 +3,9 @@ package co.edu.unbosque.controller;
 import java.util.List;
 
 import co.edu.unbosque.dao.CondicionDAO;
+import co.edu.unbosque.dao.EjemplarDAO;
 import co.edu.unbosque.dao.impl.CondicionDAOImpl;
+import co.edu.unbosque.dao.impl.EjemplarDAOImpl;
 import co.edu.unbosque.dto.CondicionDTO;
 import co.edu.unbosque.mapper.CondicionMapper;
 import co.edu.unbosque.model.Condicion;
@@ -11,9 +13,11 @@ import co.edu.unbosque.model.Condicion;
 public class CondicionController {
 
 	private CondicionDAO condicionDAO;
+	private EjemplarDAO ejemplarDAO;
 
 	public CondicionController() {
 		condicionDAO = new CondicionDAOImpl();
+		ejemplarDAO = new EjemplarDAOImpl();
 	}
 
 	public boolean agregarCondicion(CondicionDTO dto) {
@@ -23,15 +27,13 @@ public class CondicionController {
 		return condicionDAO.crearCondicion(CondicionMapper.toEntity(dto));
 	}
 
+	/** Si cambia el factor, las copias con esta condición cambian de precio sugerido. */
 	public boolean actualizarCondicion(CondicionDTO dto, String codigoCondicion) {
-		if (!esValida(dto)) {
+		if (!esValida(dto) || !condicionDAO.actualizarCondicion(CondicionMapper.toEntity(dto), codigoCondicion)) {
 			return false;
 		}
-		return condicionDAO.actualizarCondicion(CondicionMapper.toEntity(dto), codigoCondicion);
-	}
-
-	public boolean eliminarCondicion(String codigoCondicion) {
-		return condicionDAO.eliminarCondicion(codigoCondicion);
+		ejemplarDAO.recalcularPreciosDeCondicion(codigoCondicion);
+		return true;
 	}
 
 	public List<CondicionDTO> mostrarCondiciones() {

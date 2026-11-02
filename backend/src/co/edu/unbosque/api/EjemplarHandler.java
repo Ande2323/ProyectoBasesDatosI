@@ -1,9 +1,11 @@
 package co.edu.unbosque.api;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +13,7 @@ import java.util.Map;
 import com.sun.net.httpserver.HttpExchange;
 
 import co.edu.unbosque.controller.EjemplarController;
+import co.edu.unbosque.controller.ImagenEjemplarController;
 import co.edu.unbosque.dto.EjemplarDTO;
 import co.edu.unbosque.util.JsonUtil;
 
@@ -18,26 +21,35 @@ import co.edu.unbosque.util.JsonUtil;
  * Rutas de /api/ejemplares
  *
  * GET  /api/ejemplares/disponibles?idCarta=1&numeroImpresion=2  catálogo para clientes, sin datos internos
+ * GET  /api/ejemplares/copias?idCarta=1                         disponibles y apartadas, para la ficha de la carta
  * GET  /api/ejemplares?estado=DISPONIBLE&idCarta=1              inventario completo (personal)
  * GET  /api/ejemplares/{id}                                     un ejemplar (personal)
  * POST /api/ejemplares                                          registra el ingreso (personal)
  * PUT  /api/ejemplares/{id}                                     cambia ubicación, condición y observaciones (personal)
  * PUT  /api/ejemplares/{id}/baja                                baja por daño o pérdida (personal)
+ * GET  /api/ejemplares/{id}/imagen                              la imagen de la copia (pública, para poder usarla en un img)
+ * PUT  /api/ejemplares/{id}/imagen                              reemplaza la imagen; el cuerpo es el archivo (personal)
  *
  * Cuerpo del ingreso: {"codigoEtiqueta": "MC-0011", "idCarta": 1, "numeroImpresion": 2,
- *   "codigoCondicion": "NM", "ubicacion": "Vitrina A-1", "observacionesDanos": null}
+ *   "codigoCondicion": "NM", "ubicacion": "Vitrina A-1", "observacionesDanos": null,
+ *   "imagen": "<archivo JPG, PNG o WEBP en Base64>"}. La imagen es obligatoria.
  */
 public class EjemplarHandler extends ManejadorBase {
 
 	private EjemplarController ejemplarController;
+	private ImagenEjemplarController imagenController;
 
 	public EjemplarHandler() {
 		ejemplarController = new EjemplarController();
+		imagenController = new ImagenEjemplarController();
 	}
 
 	@Override
 	protected List<String> rolesPermitidos(String metodo, String subruta) {
-		if ("GET".equals(metodo) && "disponibles".equals(subruta)) {
+		if ("GET".equals(metodo) && subruta.endsWith("/imagen")) {
+			return PUBLICO;
+		}
+		if ("GET".equals(metodo) && ("disponibles".equals(subruta) || "copias".equals(subruta))) {
 			return CON_SESION;
 		}
 		return PERSONAL;
@@ -56,6 +68,14 @@ public class EjemplarHandler extends ManejadorBase {
 			}
 			return;
 		}
+		if ("copias".equals(subruta)) {
+			if ("GET".equals(metodo)) {
+				mostrarCopias(intercambio);
+			} else {
+				metodoNoPermitido(intercambio);
+			}
+			return;
+		}
 		if (subruta.isEmpty()) {
 			if ("GET".equals(metodo)) {
 				mostrar(intercambio);
@@ -69,6 +89,10 @@ public class EjemplarHandler extends ManejadorBase {
 
 		String[] partes = subruta.split("/");
 		Integer idEjemplar = convertirId(partes[0]);
+		if (idEjemplar != null && partes.length == 2 && "imagen".equals(partes[1])) {
+			atenderImagen(intercambio, metodo, idEjemplar);
+			return;
+		}
 		if (idEjemplar == null || partes.length > 2 || (partes.length == 2 && !"baja".equals(partes[1]))) {
 			enviarError(intercambio, 404, "Ruta no encontrada");
 			return;
@@ -88,6 +112,27 @@ public class EjemplarHandler extends ManejadorBase {
 		}
 	}
 
+	private void atenderImagen(HttpExchange intercambio, String metodo, int idEjemplar) throws IOException {
+		if ("GET".equals(metodo)) {
+			byte[] imagen = imagenController.leerImagen(idEjemplar);
+			if (imagen == null) {
+				enviarError(intercambio, 404, "El ejemplar " + idEjemplar + " no tiene imagen");
+				return;
+			}
+			enviarBytes(intercambio, imagenController.tipoDeContenido(idEjemplar), imagen);
+		} else if ("PUT".equals(metodo)) {
+			byte[] contenido = leerCuerpoBinario(intercambio, ImagenEjemplarController.TAMANO_MAXIMO);
+			String motivo = imagenController.guardarImagen(idEjemplar, contenido);
+			if (motivo != null) {
+				enviarError(intercambio, motivo.startsWith("No existe") ? 404 : 400, motivo);
+				return;
+			}
+			enviarMensaje(intercambio, 200, "Imagen guardada");
+		} else {
+			metodoNoPermitido(intercambio);
+		}
+	}
+
 	private void mostrarDisponibles(HttpExchange intercambio) throws IOException {
 		Integer idCarta = parametroEntero(intercambio, "idCarta");
 		Integer numero = parametroEntero(intercambio, "numeroImpresion");
@@ -98,6 +143,22 @@ public class EjemplarHandler extends ManejadorBase {
 		List<Object> lista = new ArrayList<>();
 		for (EjemplarDTO dto : ejemplarController.mostrarEjemplares(EjemplarController.DISPONIBLE, idCarta, numero)) {
 			lista.add(aMapaPublico(dto));
+		}
+		enviarJson(intercambio, 200, JsonUtil.aJson(lista));
+	}
+
+	/** Las copias que un cliente puede ver de una carta: las libres y las que ya alguien apartó. */
+	private void mostrarCopias(HttpExchange intercambio) throws IOException {
+		Integer idCarta = parametroEntero(intercambio, "idCarta");
+		if (idCarta == null || idCarta < 0) {
+			enviarError(intercambio, 400, "Indique idCarta como número entero");
+			return;
+		}
+		List<Object> lista = new ArrayList<>();
+		for (EjemplarDTO dto : ejemplarController.mostrarCopiasDeCarta(idCarta)) {
+			Map<String, Object> mapa = aMapaPublico(dto);
+			mapa.put("estado", dto.estado());
+			lista.add(mapa);
 		}
 		enviarJson(intercambio, 200, JsonUtil.aJson(lista));
 	}
@@ -134,7 +195,13 @@ public class EjemplarHandler extends ManejadorBase {
 	}
 
 	private void registrar(HttpExchange intercambio) throws IOException {
-		Map<String, Object> json = JsonUtil.leerObjeto(leerCuerpo(intercambio));
+		// 5 MB en Base64 ocupan cerca de 6,7 MB, más los demás datos.
+		byte[] cuerpo = leerCuerpoBinario(intercambio, 7 * 1024 * 1024);
+		if (cuerpo.length > 7 * 1024 * 1024) {
+			enviarError(intercambio, 400, "La imagen no puede pesar más de 5 MB");
+			return;
+		}
+		Map<String, Object> json = JsonUtil.leerObjeto(new String(cuerpo, StandardCharsets.UTF_8));
 		if (json == null) {
 			enviarError(intercambio, 400, "JSON mal formado");
 			return;
@@ -157,17 +224,33 @@ public class EjemplarHandler extends ManejadorBase {
 		}
 		EjemplarDTO dto = new EjemplarDTO(0, leerTexto(json, "codigoEtiqueta"), leerTexto(json, "ubicacion"), null, null,
 				fecha, leerTexto(json, "observacionesDanos"), idCarta, numero, leerTexto(json, "codigoCondicion"), null);
+		byte[] imagen = decodificarImagen(leerTexto(json, "imagen"));
 		String motivo = ejemplarController.validarIngreso(dto);
+		if (motivo == null) {
+			motivo = imagenController.validarImagen(imagen);
+		}
 		if (motivo != null) {
 			enviarError(intercambio, 400, motivo);
 			return;
 		}
-		EjemplarDTO creado = ejemplarController.registrarIngreso(dto);
+		EjemplarDTO creado = ejemplarController.registrarIngreso(dto, imagen);
 		if (creado == null) {
 			enviarError(intercambio, 400, "No se pudo registrar el ejemplar");
 			return;
 		}
 		enviarJson(intercambio, 201, JsonUtil.aJson(aMapa(creado)));
+	}
+
+	/** Admite Base64 puro o el formato data:image/png;base64,... que entrega el navegador. */
+	private byte[] decodificarImagen(String texto) {
+		if (texto == null || texto.isBlank()) {
+			return null;
+		}
+		try {
+			return Base64.getDecoder().decode(texto.substring(texto.indexOf(',') + 1).trim());
+		} catch (IllegalArgumentException e) {
+			return new byte[0];
+		}
 	}
 
 	private void actualizar(HttpExchange intercambio, int idEjemplar) throws IOException {
@@ -227,6 +310,7 @@ public class EjemplarHandler extends ManejadorBase {
 		mapa.put("numeroImpresion", dto.numeroImpresion());
 		mapa.put("codigoCondicion", dto.codigoCondicion());
 		mapa.put("precioSugerido", dto.precioSugerido());
+		mapa.put("tieneImagen", imagenController.tieneImagen(dto.idEjemplar()));
 		return mapa;
 	}
 }

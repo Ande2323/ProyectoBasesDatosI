@@ -1,0 +1,71 @@
+<div class="encabezado-panel">
+  <h1 class="titulo-pagina">SALIDAS</h1>
+  <button class="boton" type="button" (click)="abrir()">{{ abierto() ? 'CERRAR' : '¡ENTREGA DIRECTA!' }}</button>
+</div>
+
+@if (error()) {
+  <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+}
+@if (exito()) {
+  <p class="aviso aviso--ok" role="status">{{ exito() }}</p>
+}
+
+@if (abierto()) {
+  <section class="vineta formulario">
+    <h2 class="titulo-seccion">ENTREGA EN MOSTRADOR</h2>
+    <p class="nota">Para entregar una reserva, usa la sección Reservas. Queda a tu nombre: {{ sesion.actual()?.nombreUsuario }}.</p>
+    <form (ngSubmit)="registrar()">
+      <label class="campo">
+        Cliente
+        <select name="cliente" [(ngModel)]="cliente" required>
+          <option [ngValue]="null">Elige un cliente</option>
+          @for (c of clientes(); track c.numeroDocumento) {
+            <option [ngValue]="c">{{ c.nombres }} {{ c.apellidos }} ({{ c.tipoDocumento }} {{ c.numeroDocumento }})</option>
+          }
+        </select>
+      </label>
+      <strong>Copias que se lleva</strong>
+      <div class="casillas">
+        @for (e of disponibles(); track e.idEjemplar) {
+          <label><input type="checkbox" [name]="'copia' + e.idEjemplar" [(ngModel)]="seleccion[e.idEjemplar]" /> {{ descripcion(e.idEjemplar) }}</label>
+        } @empty {
+          <span>No hay copias disponibles.</span>
+        }
+      </div>
+      <label class="campo">Observaciones <input name="observaciones" [(ngModel)]="observaciones" /></label>
+      <button class="boton boton--azul" type="submit" [disabled]="ocupado() || !cliente || elegidos().length === 0">REGISTRAR ENTREGA</button>
+    </form>
+  </section>
+}
+
+@if (cargando()) {
+  <p class="cargando">¡Buscando salidas!...</p>
+} @else {
+  <div class="tabla-marco">
+    <table class="tabla">
+      <thead>
+        <tr><th>N.º</th><th>Fecha</th><th>Motivo</th><th>Cliente</th><th>Registró</th><th>Reserva</th><th>Copias</th><th>Observaciones</th></tr>
+      </thead>
+      <tbody>
+        @for (s of salidas(); track s.consecutivoSalida) {
+          <tr>
+            <td><strong>{{ s.consecutivoSalida }}</strong></td>
+            <td>{{ fecha(s.fecha) }}</td>
+            <td>{{ s.motivo }}</td>
+            <td>{{ s.clienteTipoDocumento }} {{ s.clienteNumeroDocumento }}</td>
+            <td>{{ s.empleadoTipoDocumento }} {{ s.empleadoNumeroDocumento }}</td>
+            <td>{{ s.consecutivoReserva ?? '—' }}</td>
+            <td>
+              @for (id of s.ejemplares; track id) {
+                <div>{{ descripcion(id) }}</div>
+              }
+            </td>
+            <td>{{ s.observaciones }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8">Todavía no hay salidas.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

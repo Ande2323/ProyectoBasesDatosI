@@ -3,6 +3,7 @@ package co.edu.unbosque.controller;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import co.edu.unbosque.dao.CondicionDAO;
@@ -32,6 +33,7 @@ public class EjemplarController {
 	private CondicionDAO condicionDAO;
 	private PrecioReferenciaDAO precioReferenciaDAO;
 	private ReservaDAO reservaDAO;
+	private ImagenEjemplarController imagenController;
 
 	public EjemplarController() {
 		ejemplarDAO = new EjemplarDAOImpl();
@@ -39,15 +41,17 @@ public class EjemplarController {
 		condicionDAO = new CondicionDAOImpl();
 		precioReferenciaDAO = new PrecioReferenciaDAOImpl();
 		reservaDAO = new ReservaDAOImpl();
+		imagenController = new ImagenEjemplarController();
 	}
 
 	/**
-	 * Registra el ingreso. El estado inicial es DISPONIBLE y el precio sugerido
-	 * se fija aquí, una sola vez: última cotización de la impresión por el factor
-	 * de la condición. Si la impresión aún no tiene precio, queda vacío.
+	 * Registra el ingreso. El estado inicial es DISPONIBLE y el precio sugerido es
+	 * la última cotización de la impresión por el factor de la condición. Si la
+	 * impresión aún no tiene precio, queda vacío hasta que se le cargue uno. La imagen
+	 * es obligatoria: si no se puede guardar, el ejemplar tampoco queda registrado.
 	 */
-	public EjemplarDTO registrarIngreso(EjemplarDTO original) {
-		if (validarIngreso(original) != null) {
+	public EjemplarDTO registrarIngreso(EjemplarDTO original, byte[] imagen) {
+		if (validarIngreso(original) != null || imagenController.validarImagen(imagen) != null) {
 			return null;
 		}
 		EjemplarDTO dto = limpiar(original);
@@ -58,14 +62,21 @@ public class EjemplarController {
 		if (!ejemplarDAO.crearEjemplar(ejemplar)) {
 			return null;
 		}
+		if (imagenController.guardarImagen(ejemplar.getIdEjemplar(), imagen) != null) {
+			ejemplarDAO.deshacerIngreso(ejemplar.getIdEjemplar());
+			return null;
+		}
 		return EjemplarMapper.toDTO(ejemplar);
 	}
 
+	/** Si cambia la condición, cambia el factor: por eso se recalcula el precio sugerido. */
 	public boolean actualizarEjemplar(EjemplarDTO dto, int idEjemplar) {
-		if (validarActualizacion(dto) != null) {
+		if (validarActualizacion(dto) != null
+				|| !ejemplarDAO.actualizarEjemplar(EjemplarMapper.toEntity(limpiar(dto)), idEjemplar)) {
 			return false;
 		}
-		return ejemplarDAO.actualizarEjemplar(EjemplarMapper.toEntity(limpiar(dto)), idEjemplar);
+		ejemplarDAO.recalcularPrecioDeEjemplar(idEjemplar);
+		return true;
 	}
 
 	/** Retorna null si se hizo, o el motivo. Daños y pérdidas no generan salida (sección D). */
@@ -89,6 +100,14 @@ public class EjemplarController {
 		reservaDAO.vencerReservas(FechaUtil.hoy());
 		return ejemplarDAO.mostrarEjemplares(estado, idCarta, numeroImpresion).stream().map(EjemplarMapper::toDTO)
 				.toList();
+	}
+
+	/** Las disponibles primero; las vendidas y las dadas de baja no se muestran al público. */
+	public List<EjemplarDTO> mostrarCopiasDeCarta(int idCarta) {
+		reservaDAO.vencerReservas(FechaUtil.hoy());
+		List<Ejemplar> copias = new ArrayList<>(ejemplarDAO.mostrarEjemplares(DISPONIBLE, idCarta, null));
+		copias.addAll(ejemplarDAO.mostrarEjemplares("RESERVADO", idCarta, null));
+		return copias.stream().map(EjemplarMapper::toDTO).toList();
 	}
 
 	public EjemplarDTO buscarEjemplar(int idEjemplar) {
@@ -132,6 +151,9 @@ public class EjemplarController {
 			return "No llegaron los datos del ejemplar";
 		}
 		EjemplarDTO dto = limpiar(original);
+		if ("VENDIDO".equals(dto.estado()) || "BAJA".equals(dto.estado())) {
+			return "Este ejemplar ya salió del inventario (" + dto.estado() + "): no se puede modificar";
+		}
 		if (dto.ubicacion() != null && dto.ubicacion().length() > 50) {
 			return "La ubicación admite máximo 50 caracteres";
 		}
@@ -139,7 +161,7 @@ public class EjemplarController {
 			return "Las observaciones admiten máximo 500 caracteres";
 		}
 		if (dto.codigoCondicion() == null || condicionDAO.buscarCondicion(dto.codigoCondicion()) == null) {
-			return "La condición es obligatoria y debe existir (NM, LP, MP, HP, DMG)";
+			return "La condición es obligatoria y debe existir en el catálogo";
 		}
 		return null;
 	}

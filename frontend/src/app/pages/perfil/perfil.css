@@ -1,0 +1,4 @@
+.columnas { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 20px; align-items: start; }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 12px 0 18px; }
+dt { font-weight: 900; }
+dd { margin: 0; }

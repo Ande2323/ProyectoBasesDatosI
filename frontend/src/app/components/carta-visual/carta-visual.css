@@ -1,0 +1,87 @@
+:host { display: block; }
+.carta {
+  position: relative;
+  aspect-ratio: 5 / 7;
+  padding: 3.5% 4% 5%;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2%;
+  background: var(--marco);
+  border: 5px solid var(--tinta);
+  border-radius: 14px;
+  box-shadow: var(--sombra);
+  container-type: inline-size;
+}
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 1.5% 3%;
+  background: var(--fondo);
+  border: 2px solid var(--tinta);
+  border-radius: 6px;
+  font-size: 5.2cqw;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.nombre { font-weight: 900; }
+.mana { display: inline-flex; gap: 2px; flex: none; }
+.simbolo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35em;
+  height: 1.35em;
+  border: 1.5px solid var(--tinta);
+  border-radius: 50%;
+  font-style: normal;
+  font-size: 0.85em;
+  font-weight: 900;
+  color: var(--tinta);
+}
+.arte {
+  flex: 1 1 46%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, var(--fondo) 0 10deg, var(--marco) 10deg 20deg);
+  border: 2px solid var(--tinta);
+  overflow: hidden;
+}
+.arte svg { height: 76%; fill: var(--blanco); stroke: var(--tinta); stroke-width: 2.5; stroke-linejoin: round; }
+.barra--tipo { font-size: 4.4cqw; }
+.texto {
+  flex: 1 1 26%;
+  min-height: 0;
+  margin: 0;
+  padding: 3%;
+  overflow: hidden;
+  background: var(--fondo);
+  border: 2px solid var(--tinta);
+  border-radius: 6px;
+  font-size: 4.5cqw;
+  line-height: 1.25;
+}
+.fuerza {
+  position: absolute;
+  right: 5%;
+  bottom: 2.5%;
+  padding: 0.5% 3%;
+  background: var(--fondo);
+  border: 2px solid var(--tinta);
+  border-radius: 6px;
+  font-size: 5.2cqw;
+  font-weight: 900;
+}
+.foto {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  background: var(--blanco);
+  border: 5px solid var(--tinta);
+  border-radius: 14px;
+  box-shadow: var(--sombra);
+}

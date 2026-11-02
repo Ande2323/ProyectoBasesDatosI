@@ -16,8 +16,6 @@ public class TipoDAOImpl implements TipoDAO {
 
 	private static final String INSERTAR = "INSERT INTO tipo (nivel, codigo, nombre) VALUES (?, ?, ?)";
 	private static final String ACTUALIZAR = "UPDATE tipo SET nivel = ?, codigo = ?, nombre = ? WHERE id_tipo = ?";
-	private static final String ELIMINAR = "DELETE FROM tipo WHERE id_tipo = ? AND NOT EXISTS "
-			+ "(SELECT 1 FROM carta_tipo WHERE tipo_id_tipo = ?)";
 	private static final String MOSTRAR = "SELECT id_tipo, nivel, codigo, nombre FROM tipo ORDER BY nivel, nombre";
 	private static final String BUSCAR = "SELECT id_tipo, nivel, codigo, nombre FROM tipo WHERE id_tipo = ?";
 
@@ -64,21 +62,6 @@ public class TipoDAOImpl implements TipoDAO {
 	}
 
 	/** Solo borra si ninguna carta lo usa. El ON DELETE CASCADE del DDL lo quitaría de las cartas sin avisar. */
-	@Override
-	public boolean eliminarTipo(int idTipo) {
-		try (Connection conexion = ConexionBD.obtenerConexion();
-				PreparedStatement ps = conexion.prepareStatement(ELIMINAR)) {
-			ps.setInt(1, idTipo);
-			ps.setInt(2, idTipo);
-			return ps.executeUpdate() == 1;
-		} catch (SQLIntegrityConstraintViolationException e) {
-			return false; // está en uso
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-
 	@Override
 	public List<Tipo> mostrarTipos() {
 		List<Tipo> lista = new ArrayList<>();

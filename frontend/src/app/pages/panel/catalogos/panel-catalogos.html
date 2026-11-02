@@ -1,0 +1,82 @@
+<h1 class="titulo-pagina encabezado-panel">CATÁLOGOS</h1>
+
+<div class="pestanas" role="group" aria-label="Elegir catálogo">
+  @for (c of catalogos; track c.ruta) {
+    <button class="pestana" type="button" [class.pestana--activa]="actual() === c" (click)="elegir(c)">{{ c.titulo }}</button>
+  }
+</div>
+
+@if (actual().basico) {
+  <p class="nota">Catálogo básico del sistema: se puede agregar y editar, pero no eliminar.</p>
+}
+
+@if (error()) {
+  <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+}
+@if (exito()) {
+  <p class="aviso aviso--ok" role="status">{{ exito() }}</p>
+}
+
+<section class="vineta formulario">
+  <h2 class="titulo-seccion">{{ llaveEditando() === null ? 'AGREGAR' : 'EDITAR' }}</h2>
+  <form (ngSubmit)="guardar()">
+    <div class="formulario-rejilla">
+      @for (campo of camposForma(); track campo.clave) {
+        <label class="campo">
+          {{ campo.titulo }}
+          @if (campo.tipo === 'nivel') {
+            <select [name]="campo.clave" [(ngModel)]="forma[campo.clave]">
+              <option [ngValue]="1">Supertipo</option>
+              <option [ngValue]="2">Tipo</option>
+              <option [ngValue]="3">Subtipo</option>
+            </select>
+          } @else {
+            <input [name]="campo.clave" [type]="campo.tipo" [step]="campo.paso ?? null" [(ngModel)]="forma[campo.clave]" />
+          }
+        </label>
+      }
+    </div>
+    <div class="acciones">
+      <button class="boton boton--azul" type="submit" [disabled]="ocupado()">GUARDAR</button>
+      @if (llaveEditando() !== null) {
+        <button class="boton boton--blanco" type="button" (click)="limpiar()">CANCELAR</button>
+      }
+    </div>
+  </form>
+</section>
+
+@if (cargando()) {
+  <p class="cargando">¡Cargando!...</p>
+} @else {
+  <div class="tabla-marco">
+    <table class="tabla">
+      <thead>
+        <tr>
+          @for (campo of actual().campos; track campo.clave) {
+            <th>{{ campo.titulo }}</th>
+          }
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila[actual().llave]) {
+          <tr>
+            @for (campo of actual().campos; track campo.clave) {
+              <td>{{ mostrar(fila, campo) }}</td>
+            }
+            <td>
+              <div class="acciones">
+                <button class="boton-chico" type="button" (click)="editar(fila)">Editar</button>
+                @if (!actual().basico) {
+                  <button class="boton-chico boton-chico--peligro" type="button" [disabled]="ocupado()" (click)="eliminar(fila)">Eliminar</button>
+                }
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td [attr.colspan]="actual().campos.length + 1">Este catálogo está vacío.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

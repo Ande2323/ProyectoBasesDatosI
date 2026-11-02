@@ -18,18 +18,25 @@ virtual de AWS (Amazon Linux 2023).
 4. Copia `config/configuracion.properties.example` como `config/configuracion.properties`
    y pon la IP de la máquina y la contraseña de `app_web`. Ese archivo no se sube a git:
    la contraseña se comparte en privado entre el grupo.
-5. Ejecuta con **F5** (configuración *Backend Magic*).
+5. Ejecuta con **F5** (configuración *Backend Magic*). Si la extensión de Java se queda en *Activating*, usa la terminal:
+
+   ```powershell
+   & "C:\Program Files\Java\jdk-21.0.10\bin\javac.exe" -encoding UTF-8 -d bin (Get-ChildItem -Recurse src -Filter *.java).FullName
+   & "C:\Program Files\Java\jdk-21.0.10\bin\java.exe" -cp "bin;lib/*" co.edu.unbosque.Aplicacion
+   ```
 
 Prueba rápida: abre `http://localhost:8080/api/salud`. Debe responder
 `{"servidor":"activo","baseDatos":"conectada"}`.
 
 ## La base de datos en AWS
 
-Instalada en la máquina: MySQL 8.4, con la base `magic_cards` creada con `DDL.sql` y
-`DML.sql` de `Scripts.zip` más `sql/restricciones.sql`, que agrega los UNIQUE que la
-normalización dejó pendientes (sección 9).
+Instalada en la máquina: MySQL 8.4, con la base `magic_cards` creada con `DDL.sql` de
+`Scripts.zip` más `sql/restricciones.sql`, que agrega los UNIQUE que la normalización dejó
+pendientes (sección 9). Los catálogos básicos se cargan con `sql/catalogos_base.sql`.
 
-`DML.sql` trae un administrador (`lgomez`), un empleado (`arojas`) y clientes de prueba.
+La base solo conserva las cuentas de `DML.sql`, un administrador (`lgomez`), un empleado
+(`arojas`) y clientes de prueba, con sus roles y los catálogos básicos. Cartas, impresiones,
+precios, ejemplares, reservas, salidas, ediciones y artistas se cargan desde el panel.
 
 **Para conectarse desde Windows,** el grupo de seguridad de la instancia debe permitir el
 puerto **3306** desde la IP de quien lo use (regla *MySQL/Aurora*, origen *My IP*), y el **22**
@@ -81,12 +88,12 @@ Las contraseñas se guardan con SHA-256, igual que `SHA2(texto, 256)` en el DML.
 
 | Recurso | Consultar | Crear / modificar | Eliminar |
 |---|---|---|---|
-| Catálogos (colores, tipos, ediciones, idiomas, rarezas, artistas, condiciones) | con sesión | ADM | ADM, si nada lo usa |
+| Catálogos (colores, tipos, ediciones, idiomas, rarezas, artistas, condiciones) | con sesión | ADM | Colores, tipos, idiomas, rarezas y condiciones: nunca. Ediciones y artistas: ADM, si nada lo usa |
 | Roles | con sesión | — | — |
 | Cartas e impresiones | con sesión | EMP, ADM | ADM, si nada las usa |
 | Precios | con sesión | EMP, ADM (solo agregar) | — |
 | Ejemplares | EMP, ADM; los clientes solo `/disponibles` | EMP, ADM | — (baja lógica) |
-| Reservas | el cliente las suyas; EMP y ADM todas | el cliente crea y cancela; EMP y ADM marcan vencida | — |
+| Reservas | el cliente las suyas; EMP y ADM todas | el cliente crea y cancela; vencen solas | — |
 | Salidas y estadísticas | EMP, ADM | EMP, ADM | — |
 | Clientes | EMP, ADM; el cliente solo a sí mismo | registro público; editar: el propio cliente o ADM | — |
 | Empleados y cuentas | ADM | ADM | baja lógica |
@@ -115,8 +122,10 @@ inválidos, `401` sin sesión, `403` sin permiso, `404` no existe, `405` método
 
 ### Catálogos
 
-`GET` (lista y uno), `POST`, `PUT` y `DELETE` en `/api/colores`, `/api/tipos`, `/api/ediciones`,
+`GET` (lista y uno), `POST` y `PUT` en `/api/colores`, `/api/tipos`, `/api/ediciones`,
 `/api/idiomas`, `/api/rarezas`, `/api/artistas` y `/api/condiciones`. `/api/roles` solo se consulta.
+`DELETE` solo existe en `/api/ediciones` y `/api/artistas`: los demás son catálogos básicos y
+responden `405`.
 Las llaves numéricas las genera MySQL: en el POST no se envían, y el `201` trae el registro con su id.
 
 ### Cartas e impresiones
@@ -139,16 +148,25 @@ Una reimpresión apunta a la original de la misma carta, nunca a otra reimpresi�
 |---|---|---|
 | GET | `/api/precios?idCarta=1&numeroImpresion=2` | Historial, del más reciente al más antiguo |
 | GET | `/api/precios/vigente?idCarta=1&numeroImpresion=2` | Precio de la fecha más reciente |
-| POST | `/api/precios` | Agrega: `{"idCarta", "numeroImpresion", "valor", "fecha"?, "fuenteCotizacion"?}`. Uno por día; no se modifica |
+| POST | `/api/precios` | Cambia el precio: `{"idCarta", "numeroImpresion", "valor", "fuenteCotizacion"?}`. Máximo una vez al día; la fecha siempre es la de hoy y el historial no se edita |
 | GET | `/api/ejemplares/disponibles?idCarta=&numeroImpresion=` | Para clientes: sin ubicación ni observaciones |
+| GET | `/api/ejemplares/copias?idCarta=` | Para la ficha de una carta: libres y apartadas, sin datos internos |
 | GET | `/api/ejemplares?estado=&idCarta=&numeroImpresion=` · `/api/ejemplares/{id}` | Inventario completo |
-| POST | `/api/ejemplares` | Ingreso: `{"codigoEtiqueta", "idCarta", "numeroImpresion", "codigoCondicion", "ubicacion"?, "observacionesDanos"?}` |
+| POST | `/api/ejemplares` | Ingreso: `{"codigoEtiqueta", "idCarta", "numeroImpresion", "codigoCondicion", "imagen", "ubicacion"?, "observacionesDanos"?}` |
 | PUT | `/api/ejemplares/{id}` | Cambia ubicación, condición y observaciones |
 | PUT | `/api/ejemplares/{id}/baja` | Baja por daño o pérdida (solo si está DISPONIBLE); no genera salida |
 
-`precioSugerido` se calcula una sola vez al ingresar (precio vigente × factor de la condición)
-y después no cambia (sección 7.1 de la normalización). Estados del ejemplar: `DISPONIBLE`,
-`RESERVADO`, `VENDIDO` y `BAJA`; los cambian las reservas, las salidas y la baja.
+**La imagen es obligatoria** al registrar un ejemplar: va en el campo `imagen` (JPG, PNG o WEBP
+en Base64, hasta 5 MB) y sin ella no se crea nada. Se guarda en `imagenes/ejemplares/{idEjemplar}.jpg`
+y se consulta con `GET /api/ejemplares/{id}/imagen`, que es público para poder usarla en un `<img>`.
+Con `PUT /api/ejemplares/{id}/imagen`, cuyo cuerpo es el archivo, se reemplaza; no se puede quitar.
+Los ejemplares precargados por `DML.sql` no tienen imagen: se suben desde el panel. Las imágenes
+quedan en el equipo que corre el backend y no van a git.
+
+`precioSugerido` es el precio vigente × el factor de la condición. Se recalcula al cargar un
+precio, al cambiar la condición de la copia y al cambiar el factor en el catálogo. Las copias
+`VENDIDO` y `BAJA` conservan el último y ya no se pueden editar. Estados del ejemplar:
+`DISPONIBLE`, `RESERVADO`, `VENDIDO` y `BAJA`; los cambian las reservas, las salidas y la baja.
 
 ### Reservas y salidas
 
@@ -157,13 +175,12 @@ y después no cambia (sección 7.1 de la normalización). Estados del ejemplar: 
 | POST | `/api/reservas` | El cliente aparta: `{"ejemplares": [3, 4]}`. Vence en `reserva.dias` (30) |
 | GET | `/api/reservas?estado=` · `/api/reservas/{n}` | El cliente ve las suyas; el personal, todas |
 | PUT | `/api/reservas/{n}/cancelar` | El cliente cancela la suya y libera los ejemplares |
-| PUT | `/api/reservas/{n}/vencer` | El personal la marca vencida |
 | POST | `/api/salidas` | Entrega directa: `{"clienteTipoDocumento", "clienteNumeroDocumento", "ejemplares": [1]}` |
 | POST | `/api/salidas` | Reclamo: `{"consecutivoReserva": 1, "ejemplares": [3]}`; sin `ejemplares`, entrega todos |
 | GET | `/api/salidas` · `/api/salidas/{n}` | Consulta |
 
 - **Vencimiento automático:** cada consulta u operación libera primero las reservas cuyo
-  plazo ya pasó. No hace falta un proceso programado.
+  plazo ya pasó. Nadie las marca a mano y no hace falta un proceso programado.
 - **Dos personas no pueden apartar la misma copia:** reservar y entregar bloquean los
   ejemplares (`SELECT ... FOR UPDATE`) dentro de una transacción.
 - **Reclamo parcial:** lo que no se recoja vuelve a DISPONIBLE y la reserva queda ENTREGADA,

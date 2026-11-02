@@ -16,7 +16,6 @@ public class IdiomaDAOImpl implements IdiomaDAO {
 
 	private static final String INSERTAR = "INSERT INTO idioma (codigo, nombre) VALUES (?, ?)";
 	private static final String ACTUALIZAR = "UPDATE idioma SET codigo = ?, nombre = ? WHERE id_idioma = ?";
-	private static final String ELIMINAR = "DELETE FROM idioma WHERE id_idioma = ?";
 	private static final String MOSTRAR = "SELECT id_idioma, codigo, nombre FROM idioma ORDER BY nombre";
 	private static final String BUSCAR = "SELECT id_idioma, codigo, nombre FROM idioma WHERE id_idioma = ?";
 
@@ -61,20 +60,6 @@ public class IdiomaDAOImpl implements IdiomaDAO {
 	}
 
 	/** Solo borra si nadie lo usa: si hay registros que lo referencian, MySQL lo impide. */
-	@Override
-	public boolean eliminarIdioma(int idIdioma) {
-		try (Connection conexion = ConexionBD.obtenerConexion();
-				PreparedStatement ps = conexion.prepareStatement(ELIMINAR)) {
-			ps.setInt(1, idIdioma);
-			return ps.executeUpdate() == 1;
-		} catch (SQLIntegrityConstraintViolationException e) {
-			return false; // está en uso
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
-
 	@Override
 	public List<Idioma> mostrarIdiomas() {
 		List<Idioma> lista = new ArrayList<>();

@@ -1,0 +1,19 @@
+<div class="estructura">
+  <aside class="lateral">
+    <a class="marca" routerLink="/panel">EL ARCHIVO</a>
+    <nav aria-label="Secciones del panel">
+      @for (item of menu(); track item.ruta) {
+        <a class="opcion" [routerLink]="item.ruta" routerLinkActive="opcion--activa">{{ item.texto }}</a>
+      }
+    </nav>
+    <div class="pie">
+      <a class="opcion" routerLink="/catalogo">Ver la tienda</a>
+      <a class="opcion" routerLink="/perfil">Mi perfil</a>
+      <button class="opcion" type="button" (click)="salir()">Salir</button>
+      <p>{{ sesion.actual()?.nombreUsuario }} · {{ rol() }}</p>
+    </div>
+  </aside>
+  <main class="contenido">
+    <router-outlet />
+  </main>
+</div>

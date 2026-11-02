@@ -1,0 +1,88 @@
+<main class="pagina">
+  <a class="volver" routerLink="/catalogo">← Volver al catálogo</a>
+
+  @if (cargando()) {
+    <p class="cargando">¡Buscando la carta!...</p>
+  }
+  @if (error()) {
+    <p class="aviso aviso--error" role="alert">{{ error() }}</p>
+  }
+  @if (exito()) {
+    <p class="aviso aviso--ok" role="status">{{ exito() }} <a routerLink="/mis-reservas">Ver mis reservas</a></p>
+  }
+
+  @if (carta(); as c) {
+    <div class="escena">
+      <section class="panel-carta">
+        <div class="sonido"><app-estallido [texto]="sonido()" tamano="2rem" /></div>
+        <app-carta-visual class="carta-grande" [carta]="c" [nombreColor]="nombreColor()" [lineaTipos]="lineaTipos()" [imagen]="imagen()" />
+      </section>
+
+      <section class="centro">
+        <h1 class="vineta nombre" [style.font-size]="tamanoNombre()">{{ c.nombreOficial }}</h1>
+        <div class="datos">
+          <span class="chip">Coste {{ c.costeMana ?? 'sin coste' }}</span>
+          <span class="chip">Valor de maná {{ c.valorMana }}</span>
+          <span class="chip">{{ lineaTipos() }}</span>
+        </div>
+        @if (c.textoOraculo) {
+          <p class="globo">{{ c.textoOraculo }}</p>
+        }
+        @if (historia().length) {
+          <div class="historia">
+            <h2 class="rotulo">HISTORIA DE LA CARTA</h2>
+            <div class="tira">
+              @for (paso of historia(); track paso.nombre) {
+                <div class="paso">
+                  <strong>{{ paso.anio }}</strong>
+                  <span>{{ paso.nombre }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
+
+      <section class="vineta vineta--amarilla copias">
+        <h2 class="titulo-seccion">COPIAS DISPONIBLES</h2>
+        @for (copia of copias(); track copia.idEjemplar) {
+          <article
+            class="copia"
+            [class.copia--apartada]="copia.estado === 'RESERVADO'"
+            [class.copia--elegida]="copiaElegida() === copia.idEjemplar"
+            (mouseenter)="copiaElegida.set(copia.idEjemplar)"
+            (focusin)="copiaElegida.set(copia.idEjemplar)"
+          >
+            <div class="copia-datos">
+              <div>
+                <strong class="codigo">{{ copia.codigoEtiqueta }}</strong>
+                <span class="linea">{{ condicion(copia) }}</span>
+                <span class="linea">{{ detalle(copia) }}</span>
+              </div>
+              <span class="monto">{{ precio(copia.precioSugerido) }}</span>
+            </div>
+            @if (sesion.esCliente()) {
+              <button
+                class="boton boton--ancho"
+                type="button"
+                [disabled]="copia.estado === 'RESERVADO' || apartando() !== null"
+                (click)="apartar(copia)"
+              >
+                {{ apartando() === copia.idEjemplar ? 'Apartando...' : '¡APARTAR!' }}
+              </button>
+            }
+            @if (copia.estado === 'RESERVADO') {
+              <div class="sello-apartada">
+                <app-estallido texto="¡YA APARTADA!" fondo="var(--azul)" letra="var(--amarillo)" tamano="1.35rem" />
+              </div>
+            }
+          </article>
+        } @empty {
+          <p class="vacio">No hay copias de esta carta en la tienda por ahora.</p>
+        }
+      </section>
+    </div>
+
+    <p class="narrador">Tienes 30 días para reclamarla</p>
+  }
+</main>
