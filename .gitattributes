@@ -7,3 +7,7 @@
 *.jpg    binary
 *.jpeg   binary
 *.drawio binary
+
+# Scripts de Linux: siempre con salto de linea LF
+*.sh      text eol=lf
+*.service text eol=lf

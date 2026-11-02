@@ -1,0 +1,8 @@
+Aquí va el driver JDBC de MySQL: mysql-connector-j-<versión>.jar
+Es el único jar del proyecto. No es un ORM: solo permite que JDBC hable con MySQL.
+
+Se descarga gratis, opción "Platform Independent", de:
+  https://dev.mysql.com/downloads/connector/j/
+
+Basta con copiarlo en esta carpeta: VS Code lo toma solo
+(ver .vscode/settings.json -> java.project.referencedLibraries).

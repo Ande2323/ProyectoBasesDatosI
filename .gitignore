@@ -61,3 +61,9 @@ logs/
 # Carpeta de trabajo para maquetar y probar la interfaz antes de llevarla a app/.
 # Se ignora la carpeta COMPLETA: ningún archivo de su interior debe subirse al repositorio.
 prototipo/
+
+# --- Backend Java ---
+# Se versiona la configuración de VS Code del backend para que todos lo abran igual.
+!backend/.vscode/
+backend/bin/
+backend/config/configuracion.properties

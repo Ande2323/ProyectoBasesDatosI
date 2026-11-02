@@ -1,0 +1,12 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "java",
+			"name": "Backend Magic",
+			"request": "launch",
+			"mainClass": "co.edu.unbosque.Aplicacion",
+			"cwd": "${workspaceFolder}"
+		}
+	]
+}

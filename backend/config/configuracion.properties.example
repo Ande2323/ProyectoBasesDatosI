@@ -1,0 +1,23 @@
+# Copia este archivo como configuracion.properties y pon tus datos.
+# configuracion.properties NO se sube a git (tiene la contraseña de la base).
+
+# --- Base de datos MySQL ---
+# Con el backend y MySQL en la misma máquina de AWS, el host es localhost.
+bd.url=jdbc:mysql://localhost:3306/magic_cards?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+bd.usuario=app_web
+bd.contrasena=cambiar
+
+# --- Servidor HTTP ---
+servidor.puerto=8080
+
+# --- Sesiones: horas que dura un inicio de sesión ---
+sesion.horas=8
+
+# --- Reservas: días de plazo para reclamar (sección H del documento de supuestos) ---
+reserva.dias=30
+
+# --- Fecha de "hoy" de la tienda: la máquina de AWS suele estar en UTC ---
+zona.horaria=America/Bogota
+
+# --- Orígenes permitidos (CORS), separados por coma: donde corre Angular ---
+cors.origen=http://localhost:4200
