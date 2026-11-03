@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 
 /**
  * Tabla CUENTA_USUARIO (3FN). contrasena guarda el hash SHA-256, nunca la
- * contraseña en claro. estado: ACTIVA, INACTIVA o BLOQUEADA.
+ * contraseña en claro. estado: ACTIVA; BLOQUEADA, que entra pero solo puede
+ * consultar; o INACTIVA, la baja definitiva.
  */
 public class CuentaUsuario implements Serializable {
 
@@ -30,6 +31,10 @@ public class CuentaUsuario implements Serializable {
 
 	public boolean estaActiva() {
 		return "ACTIVA".equals(estado);
+	}
+
+	public boolean estaBloqueada() {
+		return "BLOQUEADA".equals(estado);
 	}
 
 	public int getIdCuentaU() {

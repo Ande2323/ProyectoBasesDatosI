@@ -17,7 +17,7 @@ import co.edu.unbosque.util.JsonUtil;
  *
  * GET /api/cuentas               lista todas las cuentas
  * GET /api/cuentas/{id}          una cuenta
- * PUT /api/cuentas/{id}/estado   {"estado": "INACTIVA"} da de baja; "BLOQUEADA" bloquea; "ACTIVA" reactiva
+ * PUT /api/cuentas/{id}/estado   {"estado": "INACTIVA"} da de baja para siempre; "BLOQUEADA" bloquea; "ACTIVA" desbloquea
  * PUT /api/cuentas/{id}/rol      {"codigoRol": "ADM"} asigna rol a una cuenta de empleado
  */
 public class CuentaUsuarioHandler extends ManejadorBase {

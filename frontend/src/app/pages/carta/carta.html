@@ -61,7 +61,7 @@
               </div>
               <span class="monto">{{ precio(copia.precioSugerido) }}</span>
             </div>
-            @if (sesion.esCliente()) {
+            @if (sesion.esCliente() && !sesion.bloqueada()) {
               <button
                 class="boton boton--ancho"
                 type="button"

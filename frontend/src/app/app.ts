@@ -13,6 +13,9 @@ import { SesionService } from './services/sesion.service';
     @if (sesion.actual() && !enPanel()) {
       <app-encabezado />
     }
+    @if (sesion.bloqueada()) {
+      <p class="aviso aviso--error" role="alert">Su cuenta se encuentra bloqueada. Puede consultar la información, pero no realizar reservas ni modificaciones.</p>
+    }
     <router-outlet />
   `,
 })

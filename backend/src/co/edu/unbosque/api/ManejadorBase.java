@@ -44,7 +44,13 @@ public abstract class ManejadorBase implements HttpHandler {
 				intercambio.sendResponseHeaders(204, -1);
 				return;
 			}
-			if (!tienePermiso(intercambio, rolesPermitidos(metodo, obtenerSubruta(intercambio)))) {
+			String subruta = obtenerSubruta(intercambio);
+			if (!tienePermiso(intercambio, rolesPermitidos(metodo, subruta))) {
+				return;
+			}
+			SesionActiva sesion = obtenerSesion(intercambio);
+			if (sesion != null && sesion.bloqueada() && !permitidoSiBloqueada(metodo, subruta)) {
+				enviarError(intercambio, 403, "Su cuenta se encuentra bloqueada. Únicamente puede consultar la información");
 				return;
 			}
 			atender(intercambio);
@@ -69,6 +75,11 @@ public abstract class ManejadorBase implements HttpHandler {
 			return CON_SESION;
 		}
 		return SOLO_ADMIN;
+	}
+
+	/** Una cuenta bloqueada puede mirar, pero no reservar ni modificar nada. */
+	protected boolean permitidoSiBloqueada(String metodo, String subruta) {
+		return "GET".equals(metodo);
 	}
 
 	/** Responde 401 o 403 y retorna false si quien llama no puede usar la ruta. */

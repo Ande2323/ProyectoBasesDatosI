@@ -38,6 +38,12 @@ public class SesionHandler extends ManejadorBase {
 		return CON_SESION;
 	}
 
+	/** También puede cerrar su sesión. */
+	@Override
+	protected boolean permitidoSiBloqueada(String metodo, String subruta) {
+		return super.permitidoSiBloqueada(metodo, subruta) || ("DELETE".equals(metodo) && subruta.isEmpty());
+	}
+
 	@Override
 	protected void atender(HttpExchange intercambio) throws IOException {
 		String metodo = intercambio.getRequestMethod();
@@ -106,6 +112,7 @@ public class SesionHandler extends ManejadorBase {
 		mapa.put("tipoDocumento", sesion.tipoDocumento());
 		mapa.put("numeroDocumento", sesion.numeroDocumento());
 		mapa.put("expira", sesion.expira().toString());
+		mapa.put("bloqueada", sesion.bloqueada());
 		return mapa;
 	}
 }

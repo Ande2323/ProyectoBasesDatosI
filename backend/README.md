@@ -100,7 +100,10 @@ Las contraseñas se guardan con SHA-256, igual que `SHA2(texto, 256)` en el DML.
 | Empleados y cuentas | ADM | ADM | baja lógica |
 
 Nadie se da de baja ni cambia su propio rol, y siempre queda al menos un administrador
-activo. Dar de baja o cambiar el rol de una cuenta cierra sus sesiones de inmediato.
+activo. Cambiar el estado o el rol de una cuenta cierra sus sesiones de inmediato.
+
+Una cuenta **bloqueada** entra y puede consultar, pero no reservar ni modificar nada, y se
+puede desbloquear. Una cuenta **dada de baja** ya no entra y la baja es definitiva.
 
 ## Rutas
 
@@ -119,7 +122,7 @@ inválidos, `401` sin sesión, `403` sin permiso, `404` no existe, `405` método
 | GET / POST | `/api/empleados` | Lista o registra empleado con su cuenta y rol (`EMP` o `ADM`) |
 | GET / PUT / DELETE | `/api/empleados/{tipo}/{numero}` | Consulta, edita o da de baja (queda RETIRADO) |
 | GET | `/api/cuentas` · `/api/cuentas/{id}` | Cuentas, sin contraseña |
-| PUT | `/api/cuentas/{id}/estado` · `/api/cuentas/{id}/rol` | ACTIVA, INACTIVA o BLOQUEADA · EMP o ADM |
+| PUT | `/api/cuentas/{id}/estado` · `/api/cuentas/{id}/rol` | ACTIVA, BLOQUEADA o INACTIVA (definitiva) · EMP o ADM |
 
 ### Catálogos
 

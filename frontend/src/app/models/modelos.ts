@@ -8,6 +8,7 @@ export interface Sesion {
   tipoDocumento: string;
   numeroDocumento: string;
   expira: string;
+  bloqueada: boolean;
 }
 
 export interface Color {

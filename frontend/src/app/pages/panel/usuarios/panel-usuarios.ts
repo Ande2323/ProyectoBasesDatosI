@@ -7,6 +7,7 @@ import { fecha } from '../../../utils/formato';
 import { PaginaPanel } from '../pagina-panel';
 
 const ROLES: Record<string, string> = { CLI: 'Cliente', EMP: 'Empleado', ADM: 'Administrador' };
+const ESTADOS: Record<string, string> = { ACTIVA: 'Activa', BLOQUEADA: 'Bloqueada', INACTIVA: 'Dada de baja' };
 
 @Component({
   selector: 'app-panel-usuarios',
@@ -70,8 +71,25 @@ export class PanelUsuarios extends PaginaPanel implements OnInit {
     this.ejecutar(this.api.darDeBajaEmpleado(e.tipoDocumento, e.numeroDocumento), 'Empleado dado de baja.', () => this.cargar());
   }
 
+  protected nombreEstado(c: CuentaUsuario): string {
+    return ESTADOS[c.estado] ?? c.estado;
+  }
+
+  protected selloEstado(c: CuentaUsuario): string {
+    if (c.estado === 'ACTIVA') {
+      return 'sello sello--activa';
+    }
+    return c.estado === 'BLOQUEADA' ? 'sello sello--aviso' : 'sello sello--cancelada';
+  }
+
+  protected darDeBajaCuenta(c: CuentaUsuario): void {
+    if (confirm(`¿Confirma la baja de la cuenta ${c.nombreUsuario}? Esta acción no se puede revertir.`)) {
+      this.cambiarEstado(c, 'INACTIVA');
+    }
+  }
+
   protected cambiarEstado(c: CuentaUsuario, estado: string): void {
-    this.ejecutar(this.api.cambiarEstadoCuenta(c.idCuentaU, estado), `Cuenta ${c.nombreUsuario}: ${estado}.`, () => this.cargar());
+    this.ejecutar(this.api.cambiarEstadoCuenta(c.idCuentaU, estado), `Cuenta ${c.nombreUsuario}: ${ESTADOS[estado]}.`, () => this.cargar());
   }
 
   protected cambiarRol(c: CuentaUsuario, rol: string): void {

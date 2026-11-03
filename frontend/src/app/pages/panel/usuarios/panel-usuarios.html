@@ -108,19 +108,21 @@
             <tr>
               <td><strong>{{ c.nombreUsuario }}</strong></td>
               <td>{{ nombreRol(c.codigoRol) }}</td>
-              <td><span [class]="c.estado === 'ACTIVA' ? 'sello sello--activa' : 'sello sello--cancelada'">{{ c.estado }}</span></td>
+              <td><span [class]="selloEstado(c)">{{ nombreEstado(c) }}</span></td>
               <td>{{ c.ultimoAcceso?.replace('T', ' ')?.slice(0, 16) ?? '—' }}</td>
               <td>
                 @if (esPropia(c)) {
                   <span class="nota">Tu cuenta</span>
+                } @else if (c.estado === 'INACTIVA') {
+                  <span class="nota">Cuenta dada de baja</span>
                 } @else {
                   <div class="acciones">
-                    @if (c.estado !== 'ACTIVA') {
-                      <button class="boton-chico" type="button" [disabled]="ocupado()" (click)="cambiarEstado(c, 'ACTIVA')">Activar</button>
+                    @if (c.estado === 'BLOQUEADA') {
+                      <button class="boton-chico" type="button" [disabled]="ocupado()" (click)="cambiarEstado(c, 'ACTIVA')">Desbloquear</button>
                     } @else {
                       <button class="boton-chico" type="button" [disabled]="ocupado()" (click)="cambiarEstado(c, 'BLOQUEADA')">Bloquear</button>
-                      <button class="boton-chico boton-chico--peligro" type="button" [disabled]="ocupado()" (click)="cambiarEstado(c, 'INACTIVA')">Dar de baja</button>
                     }
+                    <button class="boton-chico boton-chico--peligro" type="button" [disabled]="ocupado()" (click)="darDeBajaCuenta(c)">Dar de baja</button>
                     @if (c.codigoRol === 'EMP') {
                       <button class="boton-chico" type="button" [disabled]="ocupado()" (click)="cambiarRol(c, 'ADM')">Hacer admin</button>
                     } @else if (c.codigoRol === 'ADM') {

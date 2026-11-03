@@ -34,14 +34,16 @@ public class SesionController {
 	/**
 	 * Retorna la sesión abierta, o null si el usuario no existe, la contraseña no
 	 * coincide, la cuenta está inactiva o el empleado fue dado de baja. Siempre se
-	 * responde igual hacia afuera para no revelar qué usuarios existen.
+	 * responde igual hacia afuera para no revelar qué usuarios existen. Una cuenta
+	 * bloqueada sí entra, pero su sesión solo puede consultar.
 	 */
 	public SesionActiva iniciarSesion(String nombreUsuario, String contrasena) {
 		if (nombreUsuario == null || contrasena == null) {
 			return null;
 		}
 		CuentaUsuario cuenta = cuentaUsuarioDAO.buscarCuentaPorUsuario(ValidacionUtil.normalizarUsuario(nombreUsuario));
-		if (cuenta == null || !coincide(contrasena, cuenta.getContrasena()) || !cuenta.estaActiva()) {
+		if (cuenta == null || !coincide(contrasena, cuenta.getContrasena())
+				|| !(cuenta.estaActiva() || cuenta.estaBloqueada())) {
 			return null;
 		}
 		String tipoDocumento;
@@ -63,7 +65,7 @@ public class SesionController {
 		}
 		cuentaUsuarioDAO.registrarAcceso(cuenta.getIdCuentaU());
 		return GestorSesiones.abrirSesion(cuenta.getIdCuentaU(), cuenta.getNombreUsuario(), cuenta.getCodigoRol(),
-				tipoDocumento, numeroDocumento);
+				tipoDocumento, numeroDocumento, cuenta.estaBloqueada());
 	}
 
 	public void cerrarSesion(String token) {

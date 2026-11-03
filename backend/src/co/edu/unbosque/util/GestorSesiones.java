@@ -18,7 +18,7 @@ public class GestorSesiones {
 
 	/** Lo que el backend sabe de quien está conectado. */
 	public record SesionActiva(String token, int idCuentaU, String nombreUsuario, String codigoRol,
-			String tipoDocumento, String numeroDocumento, LocalDateTime expira) {
+			String tipoDocumento, String numeroDocumento, LocalDateTime expira, boolean bloqueada) {
 
 		public boolean esCliente() {
 			return "CLI".equals(codigoRol);
@@ -33,13 +33,13 @@ public class GestorSesiones {
 	private static final SecureRandom ALEATORIO = new SecureRandom();
 
 	public static SesionActiva abrirSesion(int idCuentaU, String nombreUsuario, String codigoRol,
-			String tipoDocumento, String numeroDocumento) {
+			String tipoDocumento, String numeroDocumento, boolean bloqueada) {
 		byte[] bytes = new byte[32];
 		ALEATORIO.nextBytes(bytes);
 		String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 		int horas = Integer.parseInt(Configuracion.obtener("sesion.horas", "8"));
 		SesionActiva sesion = new SesionActiva(token, idCuentaU, nombreUsuario, codigoRol, tipoDocumento,
-				numeroDocumento, FechaUtil.ahora().plusHours(horas));
+				numeroDocumento, FechaUtil.ahora().plusHours(horas), bloqueada);
 		SESIONES.put(token, sesion);
 		return sesion;
 	}
@@ -66,7 +66,7 @@ public class GestorSesiones {
 		}
 	}
 
-	/** Al dar de baja una cuenta o cambiarle el rol, sus sesiones dejan de servir. */
+	/** Al cambiarle el estado o el rol a una cuenta, sus sesiones dejan de servir. */
 	public static void cerrarSesionesDe(int idCuentaU) {
 		SESIONES.values().removeIf(s -> s.idCuentaU() == idCuentaU);
 	}

@@ -14,6 +14,7 @@ export class SesionService {
   readonly actual = this.sesion.asReadonly();
   readonly esCliente = computed(() => this.sesion()?.codigoRol === 'CLI');
   readonly esAdmin = computed(() => this.sesion()?.codigoRol === 'ADM');
+  readonly bloqueada = computed(() => this.sesion()?.bloqueada === true);
   /** A dónde va cada quien al entrar: el personal trabaja en el panel, el cliente en la tienda. */
   readonly inicio = computed(() => (this.esCliente() ? '/catalogo' : '/panel'));
 

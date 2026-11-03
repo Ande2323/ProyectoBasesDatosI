@@ -3,28 +3,25 @@ package co.edu.unbosque.controller;
 import java.util.List;
 
 import co.edu.unbosque.dao.CuentaUsuarioDAO;
-import co.edu.unbosque.dao.EmpleadoDAO;
 import co.edu.unbosque.dao.impl.CuentaUsuarioDAOImpl;
-import co.edu.unbosque.dao.impl.EmpleadoDAOImpl;
 import co.edu.unbosque.dto.CuentaUsuarioDTO;
 import co.edu.unbosque.mapper.CuentaUsuarioMapper;
 import co.edu.unbosque.model.CuentaUsuario;
-import co.edu.unbosque.model.Empleado;
 import co.edu.unbosque.util.GestorSesiones;
 import co.edu.unbosque.util.GestorSesiones.SesionActiva;
 
-/** Administración de usuarios: dar de baja, reactivar y asignar roles (solo ADM). */
+/** Administración de usuarios: bloquear, desbloquear, dar de baja y asignar roles (solo ADM). */
 public class CuentaUsuarioController {
 
-	private static final List<String> ESTADOS = List.of("ACTIVA", "INACTIVA", "BLOQUEADA");
+	private static final String INACTIVA = "INACTIVA";
+	private static final String DADA_DE_BAJA = "Esta cuenta fue dada de baja y no admite modificaciones";
+	private static final List<String> ESTADOS = List.of("ACTIVA", INACTIVA, "BLOQUEADA");
 	private static final List<String> ROLES_EMPLEADO = List.of("EMP", "ADM");
 
 	private CuentaUsuarioDAO cuentaUsuarioDAO;
-	private EmpleadoDAO empleadoDAO;
 
 	public CuentaUsuarioController() {
 		cuentaUsuarioDAO = new CuentaUsuarioDAOImpl();
-		empleadoDAO = new EmpleadoDAOImpl();
 	}
 
 	public List<CuentaUsuarioDTO> mostrarCuentas() {
@@ -36,11 +33,17 @@ public class CuentaUsuarioController {
 		return cuenta == null ? null : CuentaUsuarioMapper.toDTO(cuenta);
 	}
 
-	/** Da de baja, bloquea o reactiva una cuenta. Retorna null si se hizo, o el motivo. */
+	/**
+	 * Bloquea, desbloquea o da de baja una cuenta. Retorna null si se hizo, o el
+	 * motivo. Bloquear se puede deshacer; la baja no.
+	 */
 	public String cambiarEstado(int idCuentaU, String estado, SesionActiva quienLoHace) {
 		CuentaUsuario cuenta = cuentaUsuarioDAO.buscarCuenta(idCuentaU);
 		if (cuenta == null) {
 			return "No existe la cuenta " + idCuentaU;
+		}
+		if (INACTIVA.equals(cuenta.getEstado())) {
+			return DADA_DE_BAJA;
 		}
 		String nuevo = estado == null ? null : estado.trim().toUpperCase();
 		if (nuevo == null || !ESTADOS.contains(nuevo)) {
@@ -55,12 +58,6 @@ public class CuentaUsuarioController {
 		if (!"ACTIVA".equals(nuevo) && esUltimoAdmin(cuenta)) {
 			return "Es el último administrador activo: debe quedar al menos uno";
 		}
-		if ("ACTIVA".equals(nuevo) && !esCuentaDeCliente(cuenta)) {
-			Empleado empleado = empleadoDAO.buscarEmpleadoPorCuenta(idCuentaU);
-			if (empleado != null && !empleado.estaActivo()) {
-				return "El empleado de esta cuenta fue dado de baja: su cuenta no puede reactivarse";
-			}
-		}
 		if (!cuentaUsuarioDAO.cambiarEstadoCuenta(idCuentaU, nuevo)) {
 			return "No se pudo cambiar el estado";
 		}
@@ -73,6 +70,9 @@ public class CuentaUsuarioController {
 		CuentaUsuario cuenta = cuentaUsuarioDAO.buscarCuenta(idCuentaU);
 		if (cuenta == null) {
 			return "No existe la cuenta " + idCuentaU;
+		}
+		if (INACTIVA.equals(cuenta.getEstado())) {
+			return DADA_DE_BAJA;
 		}
 		if (esCuentaDeCliente(cuenta)) {
 			return "Las cuentas de cliente siempre tienen el rol CLI";
