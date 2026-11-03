@@ -1,4 +1,4 @@
-# Frontend — El Archivo
+# Frontend — Card Magic
 
 Tienda y panel del sistema de inventario y reservas de cartas Magic, en **Angular 21**, con
 el diseño "Cómic de Batalla" (contorno grueso, sombra dura y colores planos). Corre en

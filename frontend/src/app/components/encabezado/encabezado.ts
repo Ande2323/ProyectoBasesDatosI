@@ -8,7 +8,7 @@ import { SesionService } from '../../services/sesion.service';
   imports: [RouterLink, RouterLinkActive],
   template: `
     <header class="franja">
-      <a class="marca" routerLink="/catalogo">EL ARCHIVO</a>
+      <a class="marca" routerLink="/catalogo">CARD MAGIC</a>
       <nav>
         <a class="enlace" routerLink="/catalogo" routerLinkActive="enlace--activo">Catálogo</a>
         @if (sesion.esCliente()) {

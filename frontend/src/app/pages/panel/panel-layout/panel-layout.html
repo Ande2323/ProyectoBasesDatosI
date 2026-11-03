@@ -1,6 +1,6 @@
 <div class="estructura">
   <aside class="lateral">
-    <a class="marca" routerLink="/panel">EL ARCHIVO</a>
+    <a class="marca" routerLink="/panel">CARD MAGIC</a>
     <nav aria-label="Secciones del panel">
       @for (item of menu(); track item.ruta) {
         <a class="opcion" [routerLink]="item.ruta" routerLinkActive="opcion--activa">{{ item.texto }}</a>

@@ -29,7 +29,7 @@
     <p class="aviso aviso--error" role="alert">{{ error() }}</p>
   }
   @if (cargando()) {
-    <p class="cargando">¡Abriendo el archivo!...</p>
+    <p class="cargando">¡Cargando!...</p>
   } @else {
     <div class="rejilla">
       @for (carta of visibles(); track carta.idCarta) {

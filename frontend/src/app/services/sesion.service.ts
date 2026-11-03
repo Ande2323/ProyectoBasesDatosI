@@ -4,7 +4,7 @@ import { Observable, tap } from 'rxjs';
 
 import { Sesion } from '../models/modelos';
 
-const CLAVE = 'sesion-el-archivo';
+const CLAVE = 'sesion-card-magic';
 
 @Injectable({ providedIn: 'root' })
 export class SesionService {
