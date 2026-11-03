@@ -22,6 +22,3 @@ zona.horaria=America/Bogota
 
 # --- Orígenes permitidos (CORS), separados por coma: donde corre Angular ---
 cors.origen=http://localhost:4200
-
-# --- Carpeta donde se guardan las imágenes de las copias ---
-imagenes.carpeta=imagenes

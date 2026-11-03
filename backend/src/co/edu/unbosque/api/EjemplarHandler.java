@@ -9,6 +9,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.sun.net.httpserver.HttpExchange;
 
@@ -119,7 +120,7 @@ public class EjemplarHandler extends ManejadorBase {
 				enviarError(intercambio, 404, "El ejemplar " + idEjemplar + " no tiene imagen");
 				return;
 			}
-			enviarBytes(intercambio, imagenController.tipoDeContenido(idEjemplar), imagen);
+			enviarBytes(intercambio, imagenController.tipoDeContenido(imagen), imagen);
 		} else if ("PUT".equals(metodo)) {
 			byte[] contenido = leerCuerpoBinario(intercambio, ImagenEjemplarController.TAMANO_MAXIMO);
 			String motivo = imagenController.guardarImagen(idEjemplar, contenido);
@@ -141,8 +142,9 @@ public class EjemplarHandler extends ManejadorBase {
 			return;
 		}
 		List<Object> lista = new ArrayList<>();
+		Set<Integer> conImagen = imagenController.idsConImagen();
 		for (EjemplarDTO dto : ejemplarController.mostrarEjemplares(EjemplarController.DISPONIBLE, idCarta, numero)) {
-			lista.add(aMapaPublico(dto));
+			lista.add(aMapaPublico(dto, conImagen.contains(dto.idEjemplar())));
 		}
 		enviarJson(intercambio, 200, JsonUtil.aJson(lista));
 	}
@@ -155,8 +157,9 @@ public class EjemplarHandler extends ManejadorBase {
 			return;
 		}
 		List<Object> lista = new ArrayList<>();
+		Set<Integer> conImagen = imagenController.idsConImagen();
 		for (EjemplarDTO dto : ejemplarController.mostrarCopiasDeCarta(idCarta)) {
-			Map<String, Object> mapa = aMapaPublico(dto);
+			Map<String, Object> mapa = aMapaPublico(dto, conImagen.contains(dto.idEjemplar()));
 			mapa.put("estado", dto.estado());
 			lista.add(mapa);
 		}
@@ -179,8 +182,9 @@ public class EjemplarHandler extends ManejadorBase {
 			return;
 		}
 		List<Object> lista = new ArrayList<>();
+		Set<Integer> conImagen = imagenController.idsConImagen();
 		for (EjemplarDTO dto : ejemplarController.mostrarEjemplares(estado, idCarta, numero)) {
-			lista.add(aMapa(dto));
+			lista.add(aMapa(dto, conImagen.contains(dto.idEjemplar())));
 		}
 		enviarJson(intercambio, 200, JsonUtil.aJson(lista));
 	}
@@ -292,7 +296,11 @@ public class EjemplarHandler extends ManejadorBase {
 	}
 
 	private Map<String, Object> aMapa(EjemplarDTO dto) {
-		Map<String, Object> mapa = aMapaPublico(dto);
+		return aMapa(dto, imagenController.tieneImagen(dto.idEjemplar()));
+	}
+
+	private Map<String, Object> aMapa(EjemplarDTO dto, boolean tieneImagen) {
+		Map<String, Object> mapa = aMapaPublico(dto, tieneImagen);
 		mapa.put("ubicacion", dto.ubicacion());
 		mapa.put("estado", dto.estado());
 		mapa.put("fechaIngreso", dto.fechaIngreso() == null ? null : dto.fechaIngreso().toString());
@@ -302,7 +310,7 @@ public class EjemplarHandler extends ManejadorBase {
 	}
 
 	/** Lo único que ve un cliente: nada de ubicación ni observaciones internas (sección G). */
-	private Map<String, Object> aMapaPublico(EjemplarDTO dto) {
+	private Map<String, Object> aMapaPublico(EjemplarDTO dto, boolean tieneImagen) {
 		Map<String, Object> mapa = new LinkedHashMap<>();
 		mapa.put("idEjemplar", dto.idEjemplar());
 		mapa.put("codigoEtiqueta", dto.codigoEtiqueta());
@@ -310,7 +318,7 @@ public class EjemplarHandler extends ManejadorBase {
 		mapa.put("numeroImpresion", dto.numeroImpresion());
 		mapa.put("codigoCondicion", dto.codigoCondicion());
 		mapa.put("precioSugerido", dto.precioSugerido());
-		mapa.put("tieneImagen", imagenController.tieneImagen(dto.idEjemplar()));
+		mapa.put("tieneImagen", tieneImagen);
 		return mapa;
 	}
 }

@@ -1,9 +1,11 @@
 package co.edu.unbosque.controller;
 
+import java.util.Set;
+
 import co.edu.unbosque.dao.EjemplarDAO;
 import co.edu.unbosque.dao.ImagenEjemplarDAO;
 import co.edu.unbosque.dao.impl.EjemplarDAOImpl;
-import co.edu.unbosque.dao.impl.ImagenEjemplarFileManager;
+import co.edu.unbosque.dao.impl.ImagenEjemplarDAOImpl;
 
 public class ImagenEjemplarController {
 
@@ -13,7 +15,7 @@ public class ImagenEjemplarController {
 	private EjemplarDAO ejemplarDAO;
 
 	public ImagenEjemplarController() {
-		imagenEjemplarDAO = new ImagenEjemplarFileManager();
+		imagenEjemplarDAO = new ImagenEjemplarDAOImpl();
 		ejemplarDAO = new EjemplarDAOImpl();
 	}
 
@@ -26,8 +28,7 @@ public class ImagenEjemplarController {
 		if (motivo != null) {
 			return motivo;
 		}
-		return imagenEjemplarDAO.guardarImagen(idEjemplar, contenido, detectarExtension(contenido)) ? null
-				: "No se pudo guardar la imagen";
+		return imagenEjemplarDAO.guardarImagen(idEjemplar, contenido) ? null : "No se pudo guardar la imagen";
 	}
 
 	/** Retorna null si la imagen sirve, o el motivo del rechazo. Toda copia debe tener una. */
@@ -38,37 +39,33 @@ public class ImagenEjemplarController {
 		if (contenido.length > TAMANO_MAXIMO) {
 			return "La imagen no puede pesar más de 5 MB";
 		}
-		return detectarExtension(contenido) == null ? "La imagen debe ser JPG, PNG o WEBP" : null;
+		return tipoDeContenido(contenido) == null ? "La imagen debe ser JPG, PNG o WEBP" : null;
 	}
 
 	public byte[] leerImagen(int idEjemplar) {
 		return imagenEjemplarDAO.leerImagen(idEjemplar);
 	}
 
-	public String tipoDeContenido(int idEjemplar) {
-		String extension = imagenEjemplarDAO.buscarExtension(idEjemplar);
-		if (extension == null) {
-			return null;
-		}
-		return "jpg".equals(extension) ? "image/jpeg" : "image/" + extension;
+	public boolean tieneImagen(int idEjemplar) {
+		return imagenEjemplarDAO.existeImagen(idEjemplar);
 	}
 
-	public boolean tieneImagen(int idEjemplar) {
-		return imagenEjemplarDAO.buscarExtension(idEjemplar) != null;
+	public Set<Integer> idsConImagen() {
+		return imagenEjemplarDAO.mostrarIdsConImagen();
 	}
 
 	/** Mira los primeros bytes del archivo: el nombre o la extensión que traiga no prueban nada. */
-	private String detectarExtension(byte[] b) {
+	public String tipoDeContenido(byte[] b) {
 		if (b.length >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) {
-			return "jpg";
+			return "image/jpeg";
 		}
 		if (b.length >= 8 && (b[0] & 0xFF) == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G' && b[4] == 0x0D
 				&& b[5] == 0x0A && b[6] == 0x1A && b[7] == 0x0A) {
-			return "png";
+			return "image/png";
 		}
 		if (b.length >= 12 && b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F' && b[8] == 'W' && b[9] == 'E'
 				&& b[10] == 'B' && b[11] == 'P') {
-			return "webp";
+			return "image/webp";
 		}
 		return null;
 	}

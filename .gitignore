@@ -67,6 +67,3 @@ prototipo/
 !backend/.vscode/
 backend/bin/
 backend/config/configuracion.properties
-# Imágenes que se suben desde el panel: se guardan en el equipo que corre el backend.
-backend/imagenes/ejemplares/*
-!backend/imagenes/ejemplares/.gitkeep

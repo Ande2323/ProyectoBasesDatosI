@@ -32,7 +32,8 @@ Prueba rápida: abre `http://localhost:8080/api/salud`. Debe responder
 
 Instalada en la máquina: MySQL 8.4, con la base `magic_cards` creada con `DDL.sql` de
 `Scripts.zip` más `sql/restricciones.sql`, que agrega los UNIQUE que la normalización dejó
-pendientes (sección 9). Los catálogos básicos se cargan con `sql/catalogos_base.sql`.
+pendientes (sección 9). Los catálogos básicos se cargan con `sql/catalogos_base.sql`, y
+`sql/imagenes.sql` crea la tabla de las imágenes en una base anterior a ese `DDL.sql`.
 
 La base solo conserva las cuentas de `DML.sql`, un administrador (`lgomez`), un empleado
 (`arojas`) y clientes de prueba, con sus roles y los catálogos básicos. Cartas, impresiones,
@@ -157,11 +158,10 @@ Una reimpresión apunta a la original de la misma carta, nunca a otra reimpresi�
 | PUT | `/api/ejemplares/{id}/baja` | Baja por daño o pérdida (solo si está DISPONIBLE); no genera salida |
 
 **La imagen es obligatoria** al registrar un ejemplar: va en el campo `imagen` (JPG, PNG o WEBP
-en Base64, hasta 5 MB) y sin ella no se crea nada. Se guarda en `imagenes/ejemplares/{idEjemplar}.jpg`
-y se consulta con `GET /api/ejemplares/{id}/imagen`, que es público para poder usarla en un `<img>`.
+en Base64, hasta 5 MB) y sin ella no se crea nada. Se guarda en la tabla `imagen_ejemplar` de la base, para que todos
+los equipos vean las mismas, y se consulta con `GET /api/ejemplares/{id}/imagen`, que es público para poder usarla en un `<img>`.
 Con `PUT /api/ejemplares/{id}/imagen`, cuyo cuerpo es el archivo, se reemplaza; no se puede quitar.
-Los ejemplares precargados por `DML.sql` no tienen imagen: se suben desde el panel. Las imágenes
-quedan en el equipo que corre el backend y no van a git.
+Los ejemplares precargados por `DML.sql` no tienen imagen: se suben desde el panel.
 
 `precioSugerido` es el precio vigente × el factor de la condición. Se recalcula al cargar un
 precio, al cambiar la condición de la copia y al cambiar el factor en el catálogo. Las copias
