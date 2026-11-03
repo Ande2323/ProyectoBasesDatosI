@@ -30,6 +30,7 @@ export class Catalogo implements OnInit {
     const texto = this.texto().trim().toLowerCase();
     return this.cartas().filter(
       (c) =>
+        this.disponibles(c) > 0 &&
         (color === null || c.colores.includes(color)) &&
         (!texto || c.nombreOficial.toLowerCase().includes(texto)),
     );

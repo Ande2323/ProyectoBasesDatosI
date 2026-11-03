@@ -35,12 +35,12 @@
       @for (carta of visibles(); track carta.idCarta) {
         <a class="celda" [routerLink]="['/carta', carta.idCarta]">
           <app-carta-visual [carta]="carta" [nombreColor]="nombreColor(carta)" [lineaTipos]="lineaTipos(carta)" [imagen]="imagen(carta)" />
-          <span class="disponibles" [class.disponibles--cero]="disponibles(carta) === 0">
-            {{ disponibles(carta) === 0 ? 'Sin copias libres' : disponibles(carta) + (disponibles(carta) === 1 ? ' copia libre' : ' copias libres') }}
+          <span class="disponibles">
+            {{ disponibles(carta) + (disponibles(carta) === 1 ? ' copia libre' : ' copias libres') }}
           </span>
         </a>
       } @empty {
-        <p class="aviso">No encontramos cartas con esa búsqueda.</p>
+        <p class="aviso">No hay cartas disponibles con esa búsqueda.</p>
       }
     </div>
   }

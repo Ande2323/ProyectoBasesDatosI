@@ -17,4 +17,3 @@
 .celda:hover { transform: translateY(-5px) rotate(-1deg); }
 .celda:focus-visible { outline: 3px solid var(--azul); outline-offset: 5px; }
 .disponibles { align-self: center; padding: 3px 12px; background: var(--amarillo); border: 2px solid var(--tinta); font-weight: 900; }
-.disponibles--cero { background: var(--gris); }
